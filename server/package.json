@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsx --test src/task.test.ts",
+    "test": "tsx --test \"src/**/*.test.ts\"",
     "postinstall": "prisma skills sync || exit 0",
     "dev": "tsx watch src/index.ts"
   },

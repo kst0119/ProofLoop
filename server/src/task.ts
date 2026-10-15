@@ -127,3 +127,40 @@ export function referenceCalculateCartTotal(
 
   return Math.round((total + Number.EPSILON) * 100) / 100;
 }
+
+export interface CandidateVisibleTest {
+  id: string;
+  input: CartItem[];
+  expected: number;
+}
+
+export interface CandidateTaskResponse {
+  id: string;
+  version: string;
+  title: string;
+  language: string;
+  instructions: string;
+  starterCode: string;
+  visibleTests: CandidateVisibleTest[];
+}
+
+/**
+ * Returns candidate-safe task information.
+ * Hidden test cases, reference implementation, and controlled AI challenge
+ * fixtures are strictly kept server-side and excluded from this response.
+ */
+export function getCandidateTask(): CandidateTaskResponse {
+  const visibleTests: CandidateVisibleTest[] = SHOPPING_CART_TESTS
+    .filter(testCase => testCase.set === "visible")
+    .map(({ id, input, expected }) => ({ id, input, expected }));
+
+  return {
+    id: SHOPPING_CART_TASK.id,
+    version: SHOPPING_CART_TASK.version,
+    title: SHOPPING_CART_TASK.title,
+    language: SHOPPING_CART_TASK.language,
+    instructions: SHOPPING_CART_TASK.description.trim(),
+    starterCode: SHOPPING_CART_TASK.starterCode,
+    visibleTests,
+  };
+}
