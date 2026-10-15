@@ -1,0 +1,152 @@
+import React, { useState } from 'react';
+import Editor from '@monaco-editor/react';
+import { useAssessment } from '../../context/AssessmentContext';
+import {
+  CodeIcon,
+  RefreshCwIcon,
+  CheckIcon,
+  FileTextIcon,
+} from '../common/Icons';
+
+export const CodeEditorPanel: React.FC = () => {
+  const {
+    codeFiles,
+    activeFileId,
+    setActiveFileId,
+    updateCode,
+    resetCode,
+  } = useAssessment();
+
+  const [copied, setCopied] = useState(false);
+  const [editorLoading, setEditorLoading] = useState(true);
+
+  const activeFile = codeFiles.find((f) => f.id === activeFileId) || codeFiles[0];
+
+  const handleCopy = () => {
+    if (activeFile) {
+      navigator.clipboard.writeText(activeFile.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const lineCount = activeFile.content.split('\n').length;
+  const charCount = activeFile.content.length;
+
+  return (
+    <div className="flex h-full flex-col bg-[#0b101b] border-r border-[#1a2539]">
+      {/* Tab bar & Actions */}
+      <div className="flex h-10 items-center justify-between border-b border-[#182338] bg-[#070b13] px-2">
+        {/* File Tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+          {codeFiles.map((file) => {
+            const isSelected = file.id === activeFileId;
+            return (
+              <button
+                key={file.id}
+                onClick={() => setActiveFileId(file.id)}
+                className={`flex items-center gap-2 rounded-t px-3 py-1.5 text-xs font-mono font-medium transition-colors ${
+                  isSelected
+                    ? 'border-t-2 border-[#00f2fe] bg-[#0b101b] text-white shadow-sm'
+                    : 'text-slate-400 hover:bg-[#0e1524] hover:text-slate-200'
+                }`}
+              >
+                <CodeIcon size={13} className={isSelected ? 'text-[#00f2fe]' : 'text-slate-500'} />
+                <span>{file.name}</span>
+                {file.isModified && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" title="Modified" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Editor Controls */}
+        <div className="flex items-center gap-2 text-xs">
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1 rounded border border-[#1e2e48] bg-[#0d1627] px-2 py-1 text-slate-300 hover:text-white hover:border-slate-500 transition-colors"
+            title="Copy current file code"
+          >
+            {copied ? (
+              <>
+                <CheckIcon size={12} className="text-emerald-400" />
+                <span className="text-[11px] text-emerald-400">Copied</span>
+              </>
+            ) : (
+              <>
+                <FileTextIcon size={12} />
+                <span className="text-[11px]">Copy</span>
+              </>
+            )}
+          </button>
+          <button
+            onClick={resetCode}
+            className="flex items-center gap-1 rounded border border-[#1e2e48] bg-[#0d1627] px-2 py-1 text-slate-300 hover:text-white hover:border-slate-500 transition-colors"
+            title="Reset code to default starter file"
+          >
+            <RefreshCwIcon size={12} />
+            <span className="text-[11px]">Reset File</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Editor Main Canvas */}
+      <div className="relative flex-1 min-h-[300px]">
+        {editorLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#0b101b] z-10 text-xs text-slate-400 font-mono">
+            <span className="flex items-center gap-2">
+              <span className="h-3 w-3 animate-spin rounded-full border border-[#00f2fe] border-t-transparent"></span>
+              Mounting Monaco Environment...
+            </span>
+          </div>
+        )}
+
+        <Editor
+          height="100%"
+          language={activeFile.language}
+          value={activeFile.content}
+          theme="vs-dark"
+          onMount={() => setEditorLoading(false)}
+          onChange={(value) => {
+            if (value !== undefined) {
+              updateCode(activeFile.id, value);
+            }
+          }}
+          options={{
+            fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
+            fontSize: 13,
+            lineHeight: 20,
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            wordWrap: 'on',
+            automaticLayout: true,
+            tabSize: 2,
+            readOnly: activeFile.isReadOnly || false,
+            renderLineHighlight: 'all',
+            cursorBlinking: 'smooth',
+            bracketPairColorization: { enabled: true },
+          }}
+        />
+      </div>
+
+      {/* Editor Status Bar */}
+      <div className="flex h-6 items-center justify-between border-t border-[#182338] bg-[#070b13] px-3 font-mono text-[11px] text-slate-400">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-emerald-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+            Auto-saved to client state
+          </span>
+          <span className="text-slate-400">|</span>
+          <span>{activeFile.name}</span>
+        </div>
+        <div className="flex items-center gap-4 text-slate-400">
+          <span>{lineCount} lines</span>
+          <span>{charCount} chars</span>
+          <span className="text-[#00f2fe]">TypeScript</span>
+          <span>UTF-8</span>
+        </div>
+      </div>
+    </div>
+  );
+};
