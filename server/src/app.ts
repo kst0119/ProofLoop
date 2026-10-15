@@ -17,6 +17,15 @@ import {
   MAX_MESSAGE_LENGTH,
   MAX_CODE_LENGTH_BYTES,
 } from "./aiCoach";
+import {
+  appendEvent,
+  getSessionEvents,
+  CANDIDATE_ALLOWED_EVENT_TYPES,
+  EvidenceValidationError,
+  EvidenceSessionNotFoundError,
+  EvidenceSessionNotActiveError,
+  EvidenceLimitError,
+} from "./evidence";
 import type { PrismaClient } from "@prisma/client";
 import type { OpenAI } from "openai";
 
@@ -259,6 +268,125 @@ export function createApp(
 
       console.error("[AI Coach Error]:", sanitizeLogMessage(error));
       res.status(500).json({ error: "Failed to generate AI Coach response" });
+    }
+  });
+
+  // ── Evidence Ledger ───────────────────────────────────────────────────────────
+
+  /**
+   * POST /api/sessions/:id/events
+   * Append a candidate evidence event to the ledger.
+   *
+   * Body: { eventType, actor, payload, clientTimestamp?, supersedes? }
+   *
+   * Security:
+   * - Only allow-listed event types may be submitted via this public route.
+   * - The `source` field is always forced to `candidate_submitted` server-side.
+   * - Payload size is capped; payload must be a plain JSON object.
+   */
+  app.post("/api/sessions/:id/events", async (req, res) => {
+    const { id } = req.params;
+
+    if (!isValidUuid(id)) {
+      res.status(400).json({ error: "Invalid session ID format. Must be a valid UUID." });
+      return;
+    }
+
+    const { eventType, actor, payload, clientTimestamp, supersedes } = req.body || {};
+
+    // Validate required string fields
+    if (typeof eventType !== "string" || eventType.trim().length === 0) {
+      res.status(400).json({ error: "eventType is required and must be a non-empty string" });
+      return;
+    }
+
+    // Enforce candidate event type allowlist to prevent spoofing of internal event types
+    if (!(CANDIDATE_ALLOWED_EVENT_TYPES as readonly string[]).includes(eventType)) {
+      res.status(400).json({
+        error: `Invalid event type '${eventType}'. Allowed candidate event types: ${CANDIDATE_ALLOWED_EVENT_TYPES.join(", ")}.`,
+      });
+      return;
+    }
+
+    // Validate actor
+    const ALLOWED_ACTORS = ["candidate", "ai_assistant", "test_runner", "system"] as const;
+    if (typeof actor !== "string" || !(ALLOWED_ACTORS as readonly string[]).includes(actor)) {
+      res.status(400).json({
+        error: `Invalid actor '${actor}'. Must be one of: ${ALLOWED_ACTORS.join(", ")}.`,
+      });
+      return;
+    }
+
+    // Validate payload is a plain object (not null, array, or primitive)
+    if (payload === null || payload === undefined || typeof payload !== "object" || Array.isArray(payload)) {
+      res.status(400).json({ error: "payload must be a plain JSON object" });
+      return;
+    }
+
+    // Optional: validate supersedes is a UUID string if provided
+    if (supersedes !== undefined && supersedes !== null && !isValidUuid(supersedes)) {
+      res.status(400).json({ error: "supersedes must be a valid UUID if provided" });
+      return;
+    }
+
+    try {
+      const event = await appendEvent(
+        {
+          sessionId: id,
+          eventType,
+          actor: actor as "candidate" | "ai_assistant" | "test_runner" | "system",
+          payload,
+          clientTimestamp: typeof clientTimestamp === "string" ? clientTimestamp : null,
+          supersedes: typeof supersedes === "string" ? supersedes : null,
+        },
+        db as never,
+      );
+      res.status(201).json(event);
+    } catch (error) {
+      if (error instanceof EvidenceSessionNotFoundError) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      if (error instanceof EvidenceSessionNotActiveError) {
+        res.status(409).json({ error: error.message });
+        return;
+      }
+      if (error instanceof EvidenceLimitError) {
+        res.status(429).json({ error: error.message });
+        return;
+      }
+      if (error instanceof EvidenceValidationError) {
+        res.status(400).json({ error: error.message });
+        return;
+      }
+      console.error("[Evidence Error] Failed to append event:", sanitizeLogMessage(error));
+      res.status(500).json({ error: "Failed to record evidence event" });
+    }
+  });
+
+  /**
+   * GET /api/sessions/:id/events
+   * Retrieve all evidence events for the session in ascending sequence order.
+   * Hidden test data, reference solutions, and internal config are never included.
+   */
+  app.get("/api/sessions/:id/events", async (req, res) => {
+    const { id } = req.params;
+
+    if (!isValidUuid(id)) {
+      res.status(400).json({ error: "Invalid session ID format. Must be a valid UUID." });
+      return;
+    }
+
+    try {
+      const events = await getSessionEvents(id, db as never);
+      res.status(200).json({ sessionId: id, events });
+    } catch (error) {
+      if (error instanceof EvidenceSessionNotFoundError) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      console.error("[Evidence Error] Failed to retrieve events:", sanitizeLogMessage(error));
+      res.status(500).json({ error: "Failed to retrieve evidence events" });
     }
   });
 
