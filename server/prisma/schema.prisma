@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AssessmentSession {
+  id               String          @id @default(uuid()) @db.Uuid
+  status           SessionStatus   @default(ACTIVE)
+  taskVersion      String          @default("shopping-cart-v1.0") @map("task_version")
+  rubricVersion    String          @default("rubric-v1.0") @map("rubric_version")
+  challengeVersion String?         @map("challenge_version")
+  timeLimitMinutes Int             @default(60) @map("time_limit_minutes")
+  startedAt        DateTime        @default(now()) @map("started_at") @db.Timestamptz(6)
+  closedAt         DateTime?       @map("closed_at") @db.Timestamptz(6)
+  evidenceEvents   EvidenceEvent[]
+
+  @@map("assessment_sessions")
+}
+
+model EvidenceEvent {
+  eventId          String            @id @default(uuid()) @map("event_id") @db.Uuid
+  sessionId        String            @map("session_id") @db.Uuid
+  sequence         Int
+  eventType        String            @map("event_type")
+  actor            EvidenceActor
+  clientTimestamp  DateTime?         @map("client_timestamp") @db.Timestamptz(6)
+  serverTimestamp  DateTime          @default(now()) @map("server_timestamp") @db.Timestamptz(6)
+  taskVersion      String            @map("task_version")
+  rubricVersion    String            @map("rubric_version")
+  challengeVersion String?           @map("challenge_version")
+  payload          Json
+  source           EvidenceSource
+  supersedes       String?           @db.Uuid
+  session          AssessmentSession @relation(fields: [sessionId], references: [id])
+  supersededEvent  EvidenceEvent?    @relation("EvidenceCorrections", fields: [supersedes], references: [eventId], onDelete: Restrict)
+  corrections      EvidenceEvent[]   @relation("EvidenceCorrections")
+
+  @@unique([sessionId, sequence])
+  @@index([sessionId, serverTimestamp])
+  @@map("evidence_events")
+}
+
+enum SessionStatus {
+  ACTIVE
+  SUBMITTED
+  EXPIRED
+  CLOSED
+}
+
+enum EvidenceActor {
+  CANDIDATE    @map("candidate")
+  AI_ASSISTANT @map("ai_assistant")
+  TEST_RUNNER  @map("test_runner")
+  SYSTEM       @map("system")
+}
+
+enum EvidenceSource {
+  SYSTEM_GENERATED    @map("system_generated")
+  CANDIDATE_SUBMITTED @map("candidate_submitted")
+}
