@@ -1,20 +1,30 @@
 import express, { Express } from "express";
 import cors from "cors";
-import { getCandidateTask, SHOPPING_CART_TESTS } from "./task";
+import { getCandidateTask, SHOPPING_CART_TESTS, CONTROLLED_AI_CHALLENGE } from "./task";
 import { createSession, getSessionById, isValidUuid } from "./session";
+import { prisma } from "./db";
 import {
   executeCandidateCode,
   Judge0UnavailableError,
   Judge0TimeoutError,
   MAX_CODE_SIZE_BYTES,
 } from "./judge";
+import {
+  generateAiCoachReply,
+  checkSessionRateLimit,
+  AiProviderError,
+  AiRateLimitError,
+  MAX_MESSAGE_LENGTH,
+  MAX_CODE_LENGTH_BYTES,
+} from "./aiCoach";
 import type { PrismaClient } from "@prisma/client";
+import type { OpenAI } from "openai";
 
 function sanitizeLogMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message
       .replace(/:\/\/([^:@]+):([^@]+)@/g, "://$1:***@")
-      .replace(/(password|secret|pwd)=[^&\s]+/gi, "$1=***");
+      .replace(/(password|secret|pwd|api[_-]?key)=[^&\s]+/gi, "$1=***");
   }
   return "Unknown error";
 }
@@ -22,6 +32,8 @@ function sanitizeLogMessage(error: unknown): string {
 export function createApp(
   db?: Pick<PrismaClient, "assessmentSession">,
   fetchFn?: typeof fetch,
+  openAiClient?: OpenAI,
+  aiModeOverride?: "real" | "mock",
 ): Express {
   const app = express();
 
@@ -141,6 +153,112 @@ export function createApp(
 
       console.error("[Execution Error]:", sanitizeLogMessage(error));
       res.status(500).json({ error: "Failed to execute code" });
+    }
+  });
+
+  app.post("/api/sessions/:id/ai", async (req, res) => {
+    const { id } = req.params;
+
+    if (!isValidUuid(id)) {
+      res.status(400).json({ error: "Invalid session ID format. Must be a valid UUID." });
+      return;
+    }
+
+    // Security check: Candidate-supplied trigger fields are strictly rejected
+    if (req.body && req.body.triggerChallenge !== undefined) {
+      res.status(400).json({
+        error: "Invalid request: candidate-supplied challenge triggers are not permitted",
+      });
+      return;
+    }
+
+    const { message, code } = req.body || {};
+
+    if (typeof message !== "string" || message.trim().length === 0) {
+      res.status(400).json({ error: "Message is required" });
+      return;
+    }
+
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      res.status(400).json({
+        error: `Message exceeds maximum allowed length of ${MAX_MESSAGE_LENGTH} characters`,
+      });
+      return;
+    }
+
+    if (code !== undefined && code !== null) {
+      if (typeof code !== "string") {
+        res.status(400).json({ error: "Code must be a string if provided" });
+        return;
+      }
+      if (Buffer.byteLength(code, "utf8") > MAX_CODE_LENGTH_BYTES) {
+        res.status(400).json({
+          error: `Submitted code exceeds maximum size limit of ${MAX_CODE_LENGTH_BYTES / 1024}KB`,
+        });
+        return;
+      }
+    }
+
+    try {
+      const dbClient = db || prisma;
+      const internalSession = await dbClient.assessmentSession.findUnique({
+        where: { id },
+      });
+
+      if (!internalSession) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+
+      if (internalSession.status !== "ACTIVE") {
+        res.status(409).json({
+          error: `Session is not active (current status: ${internalSession.status})`,
+        });
+        return;
+      }
+
+      // Check session rate limiting
+      try {
+        checkSessionRateLimit(id);
+      } catch (rateErr) {
+        if (rateErr instanceof AiRateLimitError) {
+          res.status(429).json({ error: rateErr.message });
+          return;
+        }
+        throw rateErr;
+      }
+
+      // Controlled challenge is governed strictly by server-side session policy in DB
+      const serverControlledChallenge =
+        internalSession.challengeVersion === CONTROLLED_AI_CHALLENGE.version
+          ? CONTROLLED_AI_CHALLENGE.id
+          : undefined;
+
+      const outcome = await generateAiCoachReply({
+        request: {
+          sessionId: id,
+          message: message.trim(),
+          code: typeof code === "string" ? code : "",
+          serverControlledChallenge,
+        },
+        openAiClient,
+        modeOverride: aiModeOverride,
+      });
+
+      res.status(200).json({
+        sessionId: outcome.sessionId,
+        reply: outcome.reply,
+        allowed: outcome.allowed,
+      });
+    } catch (error) {
+      if (error instanceof AiProviderError) {
+        console.error("[AI Coach Provider Error]:", sanitizeLogMessage(error));
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+
+      console.error("[AI Coach Error]:", sanitizeLogMessage(error));
+      res.status(500).json({ error: "Failed to generate AI Coach response" });
     }
   });
 
