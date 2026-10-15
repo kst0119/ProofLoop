@@ -409,6 +409,8 @@ test("POST /api/sessions/:id/ai returns 429 when rate limit is exceeded", async 
     const data = await limitRes.json();
     ok(data.error.includes("Too many AI Coach requests"));
   } finally {
+    // Must delete child evidence_events first due to FK constraint (onDelete: Restrict)
+    await prisma.evidenceEvent.deleteMany({ where: { sessionId: rateLimitSession.id } });
     await prisma.assessmentSession.delete({ where: { id: rateLimitSession.id } });
   }
 });

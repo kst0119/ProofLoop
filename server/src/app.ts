@@ -19,6 +19,7 @@ import {
 } from "./aiCoach";
 import {
   appendEvent,
+  appendSystemEvent,
   getSessionEvents,
   CANDIDATE_ALLOWED_EVENT_TYPES,
   EvidenceValidationError,
@@ -26,6 +27,13 @@ import {
   EvidenceSessionNotActiveError,
   EvidenceLimitError,
 } from "./evidence";
+import {
+  submitAssessment,
+  SubmissionSessionNotFoundError,
+  SubmissionAlreadyFinalizedError,
+  SubmissionInfrastructureError,
+} from "./submit";
+import { generateReport } from "./report";
 import type { PrismaClient } from "@prisma/client";
 import type { OpenAI } from "openai";
 
@@ -69,9 +77,33 @@ export function createApp(
     res.json(getCandidateTask());
   });
 
+  // ── Session Management ────────────────────────────────────────────────────
+
   app.post("/api/sessions", async (_req, res) => {
     try {
       const session = await createSession(db);
+
+      // Record session_created evidence (best-effort; log on failure)
+      try {
+        await appendSystemEvent(
+          {
+            sessionId: session.sessionId,
+            eventType: "session_created",
+            actor: "system",
+            payload: {
+              taskVersion: session.task.version,
+              timeLimitMinutes: session.timeLimitMinutes,
+            },
+          },
+          db as never,
+        );
+      } catch (evErr) {
+        console.error(
+          "[Evidence Warning] session_created event failed to record:",
+          sanitizeLogMessage(evErr),
+        );
+      }
+
       res.status(201).json(session);
     } catch (error) {
       console.error("[Session Error] Failed to create session:", sanitizeLogMessage(error));
@@ -100,6 +132,8 @@ export function createApp(
       res.status(500).json({ error: "Failed to retrieve assessment session" });
     }
   });
+
+  // ── Code Execution ────────────────────────────────────────────────────────
 
   app.post("/api/sessions/:id/run", async (req, res) => {
     const { id } = req.params;
@@ -137,13 +171,72 @@ export function createApp(
         return;
       }
 
+      // Record run_requested evidence
+      try {
+        await appendSystemEvent(
+          {
+            sessionId: id,
+            eventType: "run_requested",
+            actor: "test_runner",
+            payload: { codeLength: Buffer.byteLength(code, "utf8") },
+          },
+          db as never,
+        );
+      } catch (evErr) {
+        console.error("[Evidence Warning] run_requested event failed:", sanitizeLogMessage(evErr));
+      }
+
       const visibleTests = SHOPPING_CART_TESTS.filter((t) => t.set === "visible");
 
-      const outcome = await executeCandidateCode({
-        code,
-        tests: visibleTests,
-        fetchFn,
-      });
+      let outcome;
+      try {
+        outcome = await executeCandidateCode({
+          code,
+          tests: visibleTests,
+          fetchFn,
+        });
+      } catch (runErr) {
+        // Record run_failed evidence
+        try {
+          await appendSystemEvent(
+            {
+              sessionId: id,
+              eventType: "run_failed",
+              actor: "system",
+              payload: {
+                reason:
+                  runErr instanceof Judge0TimeoutError
+                    ? "timeout"
+                    : runErr instanceof Judge0UnavailableError
+                      ? "unavailable"
+                      : "unknown",
+              },
+            },
+            db as never,
+          );
+        } catch (evErr2) {
+          console.error("[Evidence Warning] run_failed event failed:", sanitizeLogMessage(evErr2));
+        }
+        throw runErr;
+      }
+
+      // Record run_completed evidence
+      try {
+        await appendSystemEvent(
+          {
+            sessionId: id,
+            eventType: "run_completed",
+            actor: "test_runner",
+            payload: {
+              passed: outcome.passed,
+              total: outcome.total,
+            },
+          },
+          db as never,
+        );
+      } catch (evErr) {
+        console.error("[Evidence Warning] run_completed event failed:", sanitizeLogMessage(evErr));
+      }
 
       res.status(200).json({
         sessionId: session.sessionId,
@@ -164,6 +257,8 @@ export function createApp(
       res.status(500).json({ error: "Failed to execute code" });
     }
   });
+
+  // ── AI Coach ──────────────────────────────────────────────────────────────
 
   app.post("/api/sessions/:id/ai", async (req, res) => {
     const { id } = req.params;
@@ -237,6 +332,21 @@ export function createApp(
         throw rateErr;
       }
 
+      // Record ai_requested evidence (message length only; never raw message)
+      try {
+        await appendSystemEvent(
+          {
+            sessionId: id,
+            eventType: "ai_requested",
+            actor: "candidate",
+            payload: { messageLength: message.trim().length, hasCode: typeof code === "string" },
+          },
+          db as never,
+        );
+      } catch (evErr) {
+        console.error("[Evidence Warning] ai_requested event failed:", sanitizeLogMessage(evErr));
+      }
+
       // Controlled challenge is governed strictly by server-side session policy in DB
       const serverControlledChallenge =
         internalSession.challengeVersion === CONTROLLED_AI_CHALLENGE.version
@@ -253,6 +363,33 @@ export function createApp(
         openAiClient,
         modeOverride: aiModeOverride,
       });
+
+      // Record ai_response_delivered evidence
+      // SECURITY: Never record raw message, raw code, raw reply, or API keys.
+      try {
+        const evType =
+          outcome.isControlledChallenge ? "ai_challenge_delivered" : "ai_response_delivered";
+        await appendSystemEvent(
+          {
+            sessionId: id,
+            eventType: evType,
+            actor: "ai_assistant",
+            payload: {
+              provider: outcome.provider,
+              model: outcome.model,
+              isControlledChallenge: outcome.isControlledChallenge,
+              challengeId: outcome.challengeId ?? null,
+              replyLength: outcome.reply.length,
+            },
+          },
+          db as never,
+        );
+      } catch (evErr) {
+        console.error(
+          "[Evidence Warning] ai_response_delivered event failed:",
+          sanitizeLogMessage(evErr),
+        );
+      }
 
       res.status(200).json({
         sessionId: outcome.sessionId,
@@ -271,7 +408,7 @@ export function createApp(
     }
   });
 
-  // ── Evidence Ledger ───────────────────────────────────────────────────────────
+  // ── Evidence Ledger ───────────────────────────────────────────────────────
 
   /**
    * POST /api/sessions/:id/events
@@ -294,13 +431,11 @@ export function createApp(
 
     const { eventType, actor, payload, clientTimestamp, supersedes } = req.body || {};
 
-    // Validate required string fields
     if (typeof eventType !== "string" || eventType.trim().length === 0) {
       res.status(400).json({ error: "eventType is required and must be a non-empty string" });
       return;
     }
 
-    // Enforce candidate event type allowlist to prevent spoofing of internal event types
     if (!(CANDIDATE_ALLOWED_EVENT_TYPES as readonly string[]).includes(eventType)) {
       res.status(400).json({
         error: `Invalid event type '${eventType}'. Allowed candidate event types: ${CANDIDATE_ALLOWED_EVENT_TYPES.join(", ")}.`,
@@ -308,7 +443,6 @@ export function createApp(
       return;
     }
 
-    // Validate actor
     const ALLOWED_ACTORS = ["candidate", "ai_assistant", "test_runner", "system"] as const;
     if (typeof actor !== "string" || !(ALLOWED_ACTORS as readonly string[]).includes(actor)) {
       res.status(400).json({
@@ -317,13 +451,11 @@ export function createApp(
       return;
     }
 
-    // Validate payload is a plain object (not null, array, or primitive)
     if (payload === null || payload === undefined || typeof payload !== "object" || Array.isArray(payload)) {
       res.status(400).json({ error: "payload must be a plain JSON object" });
       return;
     }
 
-    // Optional: validate supersedes is a UUID string if provided
     if (supersedes !== undefined && supersedes !== null && !isValidUuid(supersedes)) {
       res.status(400).json({ error: "supersedes must be a valid UUID if provided" });
       return;
@@ -367,7 +499,9 @@ export function createApp(
   /**
    * GET /api/sessions/:id/events
    * Retrieve all evidence events for the session in ascending sequence order.
-   * Hidden test data, reference solutions, and internal config are never included.
+   *
+   * SECURITY: This endpoint is unprotected beyond knowing the session UUID.
+   * Add authentication + authorization before public deployment.
    */
   app.get("/api/sessions/:id/events", async (req, res) => {
     const { id } = req.params;
@@ -387,6 +521,104 @@ export function createApp(
       }
       console.error("[Evidence Error] Failed to retrieve events:", sanitizeLogMessage(error));
       res.status(500).json({ error: "Failed to retrieve evidence events" });
+    }
+  });
+
+  // ── Final Submission ──────────────────────────────────────────────────────
+
+  /**
+   * POST /api/sessions/:id/submit
+   * Accept a final candidate code submission.
+   *
+   * Runs ALL tests (visible + hidden), atomically transitions session to SUBMITTED,
+   * and records trusted evidence. Hidden test details are never returned.
+   *
+   * Returns: { sessionId, status, passed, total, visible, hidden, submittedAt }
+   */
+  app.post("/api/sessions/:id/submit", async (req, res) => {
+    const { id } = req.params;
+
+    if (!isValidUuid(id)) {
+      res.status(400).json({ error: "Invalid session ID format. Must be a valid UUID." });
+      return;
+    }
+
+    const { code } = req.body || {};
+
+    if (typeof code !== "string" || code.trim().length === 0) {
+      res.status(400).json({ error: "Candidate code is required" });
+      return;
+    }
+
+    if (Buffer.byteLength(code, "utf8") > MAX_CODE_SIZE_BYTES) {
+      res.status(400).json({
+        error: `Submitted code exceeds maximum size limit of ${MAX_CODE_SIZE_BYTES / 1024}KB`,
+      });
+      return;
+    }
+
+    try {
+      const result = await submitAssessment({
+        sessionId: id,
+        code,
+        fetchFn,
+        db: db as never,
+      });
+      res.status(200).json(result);
+    } catch (error) {
+      if (error instanceof SubmissionSessionNotFoundError) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      if (error instanceof SubmissionAlreadyFinalizedError) {
+        res.status(409).json({ error: error.message });
+        return;
+      }
+      if (error instanceof SubmissionInfrastructureError) {
+        console.error("[Submission Infrastructure Error]:", sanitizeLogMessage(error));
+        res.status(503).json({ error: error.message });
+        return;
+      }
+      if (error instanceof Judge0UnavailableError || error instanceof Judge0TimeoutError) {
+        console.error("[Judge0 Submission Error]:", sanitizeLogMessage(error));
+        res.status(503).json({
+          error: "Code execution service is temporarily unavailable. Please try again later.",
+        });
+        return;
+      }
+      console.error("[Submission Error]:", sanitizeLogMessage(error));
+      res.status(500).json({ error: "Failed to process submission" });
+    }
+  });
+
+  // ── Engineering Evidence Report ───────────────────────────────────────────
+
+  /**
+   * GET /api/sessions/:id/report
+   * Returns a structured engineering evidence report.
+   *
+   * SECURITY: Unprotected for MVP. Add auth before deployment.
+   * Correctness is calculated deterministically from system_generated evidence only.
+   * Hidden test values and AI prompts are never included in the output.
+   */
+  app.get("/api/sessions/:id/report", async (req, res) => {
+    const { id } = req.params;
+
+    if (!isValidUuid(id)) {
+      res.status(400).json({ error: "Invalid session ID format. Must be a valid UUID." });
+      return;
+    }
+
+    try {
+      const report = await generateReport(id, db as never);
+      res.status(200).json(report);
+    } catch (error) {
+      if (error instanceof EvidenceSessionNotFoundError) {
+        res.status(404).json({ error: "Session not found" });
+        return;
+      }
+      console.error("[Report Error] Failed to generate report:", sanitizeLogMessage(error));
+      res.status(500).json({ error: "Failed to generate assessment report" });
     }
   });
 

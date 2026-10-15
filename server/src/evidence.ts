@@ -16,7 +16,7 @@
  *   already be superseded (preventing chain manipulation).
  */
 
-import type { PrismaClient } from "@prisma/client";
+import { PrismaClient, EvidenceActor, EvidenceSource } from "@prisma/client";
 import { prisma as defaultPrisma } from "./db";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -40,6 +40,25 @@ export const CANDIDATE_ALLOWED_EVENT_TYPES = [
 ] as const;
 
 export type CandidateEventType = (typeof CANDIDATE_ALLOWED_EVENT_TYPES)[number];
+
+/**
+ * Internal system-generated event types.
+ * These are written ONLY by trusted server code, never by the public append route.
+ * The `source` field is forced to `system_generated` and cannot be overridden by callers.
+ */
+export const SYSTEM_EVENT_TYPES = [
+  "session_created",
+  "run_requested",
+  "run_completed",
+  "run_failed",
+  "ai_requested",
+  "ai_response_delivered",
+  "ai_challenge_delivered",
+  "submission_received",
+  "submission_evaluated",
+] as const;
+
+export type SystemEventType = (typeof SYSTEM_EVENT_TYPES)[number];
 
 // ── Errors ─────────────────────────────────────────────────────────────────────
 
@@ -99,6 +118,20 @@ export interface EvidenceEventView {
   supersedes: string | null;
 }
 
+/** Input for trusted server-generated events. Source is always `system_generated`. */
+export interface AppendSystemEventInput {
+  sessionId: string;
+  eventType: SystemEventType;
+  actor: "candidate" | "ai_assistant" | "test_runner" | "system";
+  /** Redacted payload — never include raw prompts, hidden fixture values, or API keys. */
+  payload: Record<string, unknown>;
+  /**
+   * If true, skip the ACTIVE status check.
+   * Use ONLY when recording the outcome of a submission that just changed the status.
+   */
+  skipStatusCheck?: boolean;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 /**
@@ -127,6 +160,21 @@ export function parseClientTimestamp(value: string | null | undefined): Date | n
   return new Date(ms);
 }
 
+// Helper to map actor string to its DB-mapped lowercase value
+function mapActor(actor: string): string {
+  switch (actor) {
+    case "candidate":
+      return "candidate";
+    case "ai_assistant":
+      return "ai_assistant";
+    case "test_runner":
+      return "test_runner";
+    case "system":
+    default:
+      return "system";
+  }
+}
+
 /** Maps a Prisma EvidenceEvent row to the public view shape. */
 function toView(row: {
   eventId: string;
@@ -148,14 +196,14 @@ function toView(row: {
     sessionId: row.sessionId,
     sequence: row.sequence,
     eventType: row.eventType,
-    actor: row.actor,
+    actor: row.actor.toLowerCase(),
     clientTimestamp: row.clientTimestamp?.toISOString() ?? null,
     serverTimestamp: row.serverTimestamp.toISOString(),
     taskVersion: row.taskVersion,
     rubricVersion: row.rubricVersion,
     challengeVersion: row.challengeVersion,
     payload: row.payload,
-    source: row.source,
+    source: row.source.toLowerCase(),
     supersedes: row.supersedes,
   };
 }
@@ -247,7 +295,7 @@ export async function appendEvent(
         sessionId: input.sessionId,
         sequence: nextSequence,
         eventType: input.eventType,
-        actor: input.actor as never,
+        actor: mapActor(input.actor) as never,
         clientTimestamp: clientTs,
         taskVersion: session.taskVersion,
         rubricVersion: session.rubricVersion,
@@ -263,9 +311,86 @@ export async function appendEvent(
 }
 
 /**
+ * Appends a TRUSTED, system-generated evidence event.
+ *
+ * This function is for INTERNAL SERVER USE ONLY.
+ * - Source is always forced to `system_generated`.
+ * - By default, requires session to exist (but not necessarily ACTIVE, e.g. post-submission).
+ * - skipStatusCheck=true allows recording final submission evidence after status transition.
+ * - If DB write fails after an external service call, throws — never silently swallows.
+ *
+ * SECURITY: Never pass raw AI prompts, hidden fixture values, candidate code > 500 chars,
+ * or API keys in the payload. Redact before calling.
+ */
+export async function appendSystemEvent(
+  input: AppendSystemEventInput,
+  db?: Pick<PrismaClient, "assessmentSession" | "evidenceEvent">,
+): Promise<EvidenceEventView> {
+  const client = (db || defaultPrisma) as PrismaClient;
+
+  // Validate payload size (same limit as candidate events)
+  const bytes = Buffer.byteLength(JSON.stringify(input.payload), "utf8");
+  if (bytes > MAX_PAYLOAD_BYTES) {
+    throw new EvidenceValidationError(`System event payload exceeds size limit`);
+  }
+
+  return (client as PrismaClient).$transaction(async (tx) => {
+    const session = await tx.assessmentSession.findUnique({
+      where: { id: input.sessionId },
+    });
+
+    if (!session) {
+      throw new EvidenceSessionNotFoundError(input.sessionId);
+    }
+
+    // Skip ACTIVE check only when explicitly requested (e.g. post-submission recording)
+    if (!input.skipStatusCheck && session.status !== "ACTIVE") {
+      throw new EvidenceSessionNotActiveError(session.status);
+    }
+
+    const count = await tx.evidenceEvent.count({
+      where: { sessionId: input.sessionId },
+    });
+    if (count >= MAX_EVENTS_PER_SESSION) {
+      throw new EvidenceLimitError(MAX_EVENTS_PER_SESSION);
+    }
+
+    const maxSeqRow = await tx.evidenceEvent.findFirst({
+      where: { sessionId: input.sessionId },
+      orderBy: { sequence: "desc" },
+      select: { sequence: true },
+    });
+    const nextSequence = (maxSeqRow?.sequence ?? 0) + 1;
+
+    const created = await tx.evidenceEvent.create({
+      data: {
+        sessionId: input.sessionId,
+        sequence: nextSequence,
+        eventType: input.eventType,
+        actor: mapActor(input.actor) as never,
+        clientTimestamp: null,
+        taskVersion: session.taskVersion,
+        rubricVersion: session.rubricVersion,
+        challengeVersion: session.challengeVersion,
+        payload: input.payload as never,
+        source: "system_generated" as never,
+        supersedes: null,
+      },
+    });
+
+    return toView(created);
+  });
+}
+
+/**
  * Retrieves all evidence events for the given session, ordered by sequence ascending.
  *
  * @throws EvidenceSessionNotFoundError — session does not exist
+ *
+ * SECURITY NOTE: This endpoint is currently unprotected beyond knowing the session UUID.
+ * Before any public/production deployment, add authentication + authorization so that
+ * only the session owner or authorized recruiters can access the evidence timeline.
+ * Raw code snapshots and AI prompts in payloads may be sensitive.
  */
 export async function getSessionEvents(
   sessionId: string,
