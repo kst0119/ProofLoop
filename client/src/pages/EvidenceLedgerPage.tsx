@@ -6,7 +6,6 @@ import { EvidenceDrawer } from '../components/evidence/EvidenceDrawer';
 import type { EvidenceItem, CompetencyMetric } from '../types';
 import {
   SearchIcon,
-  FilterIcon,
   FileTextIcon,
 } from '../components/common/Icons';
 
@@ -23,6 +22,7 @@ export const EvidenceLedgerPage = () => {
   } = useAssessment();
 
   const [activeItemForModal, setActiveItemForModal] = useState<EvidenceItem | null>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCompetency, setSelectedCompetency] = useState<string>('ALL');
   const [selectedConfidence, setSelectedConfidence] = useState<string>('ALL');
@@ -51,171 +51,264 @@ export const EvidenceLedgerPage = () => {
     return true;
   });
 
+  const getNatureBadge = (nature: EvidenceItem['nature']) => {
+    switch (nature) {
+      case 'OBSERVED_EVENT':
+        return <span className="rounded bg-[#EAF4F1] px-2 py-0.5 text-[9px] font-mono font-bold text-[#144A3F] border border-[#9DCFC4]">Observed Telemetry</span>;
+      case 'SYNTHESIZED_FINDING':
+        return <span className="rounded bg-[#F2EFE9] px-2 py-0.5 text-[9px] font-mono font-bold text-[#57524A] border border-[#DFD9CE]">Synthesized Finding</span>;
+      case 'COUNTER_EVIDENCE':
+        return <span className="rounded bg-[#FDF1F1] px-2 py-0.5 text-[9px] font-mono font-bold text-[#A82424] border border-[#F7B5B5]">Counter Evidence</span>;
+    }
+  };
+
+  const getConfidenceBadge = (confidence: EvidenceItem['confidence']) => {
+    switch (confidence) {
+      case 'CORROBORATED_FACT':
+        return <span className="rounded bg-[#EDF7F2] px-2 py-0.5 text-[9px] font-mono font-bold text-[#126646] border border-[#A3DBC4]">Corroborated Fact</span>;
+      case 'HIGH_CONFIDENCE':
+        return <span className="rounded bg-[#EAF4F1] px-2 py-0.5 text-[9px] font-mono font-bold text-[#144A3F] border border-[#9DCFC4]">High Confidence</span>;
+      case 'MEDIUM_CONFIDENCE':
+        return <span className="rounded bg-[#FEF6EC] px-2 py-0.5 text-[9px] font-mono font-bold text-[#A1520C] border border-[#F6CE9F]">Medium Confidence</span>;
+      case 'INFERRED_INTERPRETATION':
+        return <span className="rounded bg-[#F4F1EA] px-2 py-0.5 text-[9px] font-mono font-bold text-[#736E64] border border-[#DFD9CE]">Inferred</span>;
+    }
+  };
+
   return (
-    <div className="flex-1 bg-[#070a10] text-slate-100 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#182338] pb-6">
+    <div className="flex-1 bg-[#F8F6F0] text-[#191715] py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+      {/* Editorial Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#DFD9CE] pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <span className="rounded bg-[#0d1f33] px-2.5 py-0.5 text-xs font-mono font-semibold text-[#00f2fe] border border-[#143e63]">
+            <span className="rounded bg-[#EAF4F1] px-2.5 py-0.5 text-xs font-mono font-bold text-[#0F3D34] border border-[#9DCFC4]">
               EVIDENCE LEDGER
             </span>
-            <span className="font-mono text-xs text-slate-400">
+            <span className="font-mono text-xs text-[#736E64]">
               Session {session.sessionId} • {evidenceItems.length} Records Compiled
             </span>
           </div>
-          <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-white">
+          <h1 className="mt-2 font-serif text-2xl sm:text-3xl font-bold text-[#191715]">
             Inspectable Competency Evidence Ledger
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-300 max-w-2xl">
+          <p className="mt-1 text-xs sm:text-sm text-[#57524A] max-w-2xl leading-relaxed">
             Corroborated proof points connecting observed telemetry to evaluation rubrics. Every finding explicitly differentiates direct telemetry logs from evaluator conclusions.
           </p>
         </div>
 
         {/* Action Link to Reviewer Report */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Link
             to="/report"
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#10b981] px-4 py-2 text-xs font-bold text-black shadow-md hover:opacity-95 transition-all"
+            className="btn-primary text-xs"
           >
-            <FileTextIcon size={14} />
-            <span>Generate Reviewer Report</span>
+            <FileTextIcon size={13} />
+            <span>Reviewer Report</span>
           </Link>
         </div>
       </div>
 
       {/* Competency Summary Ribbon */}
       <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {competencies.map((comp: CompetencyMetric) => (
-          <div
-            key={comp.id}
-            onClick={() => setSelectedCompetency(selectedCompetency === comp.id ? 'ALL' : comp.id)}
-            className={`rounded-xl border p-3 cursor-pointer transition-all ${
-              selectedCompetency === comp.id
-                ? 'border-[#00f2fe] bg-[#0f1d30]'
-                : 'border-[#1a283e] bg-[#090f1a] hover:border-[#273d5e]'
+        {competencies.map((comp: CompetencyMetric) => {
+          const isSelected = selectedCompetency === comp.id;
+          return (
+            <div
+              key={comp.id}
+              onClick={() => setSelectedCompetency(isSelected ? 'ALL' : comp.id)}
+              className={`rounded-lg border p-3 cursor-pointer transition-all ${
+                isSelected
+                  ? 'border-[#144A3F] bg-white shadow-md ring-1 ring-[#144A3F]/20'
+                  : 'border-[#DFD9CE] bg-white hover:border-[#CAC2B3] hover:shadow-2xs'
+              }`}
+            >
+              <div className="flex items-center justify-between text-[11px] font-mono text-[#736E64]">
+                <span>{comp.id}</span>
+                <span className="font-bold text-[#144A3F]">{comp.score.toFixed(1)} / 5.0</span>
+              </div>
+              <h4 className="mt-1 text-xs font-bold text-[#191715] line-clamp-1">{comp.name}</h4>
+              <div className="mt-1.5 flex items-center justify-between text-[10px]">
+                <span className="text-[#126646] font-semibold">{comp.level}</span>
+                <span className="font-mono text-[#736E64]">{comp.evidenceItemsCount} Proofs</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Search, Filter & View Mode Controls */}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+          {/* Search box */}
+          <div className="relative flex-1 min-w-[220px]">
+            <SearchIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#736E64]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by Evidence ID (EVD-101), competency, keywords..."
+              className="w-full rounded-md border border-[#DFD9CE] bg-white pl-9 pr-3 py-1.5 text-xs text-[#191715] placeholder-[#736E64] focus:border-[#144A3F] focus:outline-none"
+            />
+          </div>
+
+          {/* Competency filter */}
+          <select
+            value={selectedCompetency}
+            onChange={(e) => setSelectedCompetency(e.target.value)}
+            className="rounded-md border border-[#DFD9CE] bg-white px-3 py-1.5 text-xs text-[#191715] focus:border-[#144A3F] focus:outline-none"
+          >
+            <option value="ALL">All Competencies</option>
+            {competencies.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
+          {/* Nature filter */}
+          <select
+            value={selectedNature}
+            onChange={(e) => setSelectedNature(e.target.value)}
+            className="rounded-md border border-[#DFD9CE] bg-white px-3 py-1.5 text-xs text-[#191715] focus:border-[#144A3F] focus:outline-none"
+          >
+            <option value="ALL">All Natures</option>
+            <option value="OBSERVED_EVENT">Observed Telemetry</option>
+            <option value="SYNTHESIZED_FINDING">Synthesized Findings</option>
+            <option value="COUNTER_EVIDENCE">Counter Evidence</option>
+          </select>
+
+          {/* Confidence filter */}
+          <select
+            value={selectedConfidence}
+            onChange={(e) => setSelectedConfidence(e.target.value)}
+            className="rounded-md border border-[#DFD9CE] bg-white px-3 py-1.5 text-xs text-[#191715] focus:border-[#144A3F] focus:outline-none"
+          >
+            <option value="ALL">All Confidence Grades</option>
+            <option value="CORROBORATED_FACT">Corroborated Fact</option>
+            <option value="HIGH_CONFIDENCE">High Confidence</option>
+            <option value="MEDIUM_CONFIDENCE">Medium Confidence</option>
+            <option value="INFERRED_INTERPRETATION">Inferred</option>
+          </select>
+        </div>
+
+        {/* View Toggle */}
+        <div className="flex items-center rounded-md border border-[#DFD9CE] bg-white p-0.5 text-xs font-semibold shadow-2xs">
+          <button
+            onClick={() => setViewMode('table')}
+            className={`rounded px-3 py-1 transition-colors ${
+              viewMode === 'table'
+                ? 'bg-[#144A3F] text-white shadow-xs'
+                : 'text-[#57524A] hover:text-[#191715]'
             }`}
           >
-            <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
-              <span>{comp.id}</span>
-              <span className="font-bold text-[#00f2fe]">{comp.score.toFixed(1)} / 5.0</span>
+            Table View
+          </button>
+          <button
+            onClick={() => setViewMode('cards')}
+            className={`rounded px-3 py-1 transition-colors ${
+              viewMode === 'cards'
+                ? 'bg-[#144A3F] text-white shadow-xs'
+                : 'text-[#57524A] hover:text-[#191715]'
+            }`}
+          >
+            Card View
+          </button>
+        </div>
+      </div>
+
+      {/* Main Ledger Content: Structured Table or Cards */}
+      <div className="mt-6">
+        {viewMode === 'table' ? (
+          <div className="rounded-xl border border-[#DFD9CE] bg-white overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-[#DFD9CE] bg-[#F4F1EA] text-[#191715] font-semibold">
+                    <th className="p-3 font-mono text-[11px] w-24">ID</th>
+                    <th className="p-3 w-48">Competency</th>
+                    <th className="p-3 w-36">Nature & Grade</th>
+                    <th className="p-3">Observed Behavior & Interpretation</th>
+                    <th className="p-3 font-mono text-center w-20">Weight</th>
+                    <th className="p-3 text-right w-36">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#EAE6DD]">
+                  {filteredItems.map((item) => (
+                    <tr
+                      key={item.id}
+                      onClick={() => setActiveItemForModal(item)}
+                      className="hover:bg-[#FAF8F5] cursor-pointer transition-colors"
+                    >
+                      <td className="p-3 font-mono font-bold text-[#144A3F] align-top">
+                        {item.id}
+                      </td>
+                      <td className="p-3 align-top">
+                        <span className="font-bold text-[#191715] block">{item.competencyName}</span>
+                        <span className="text-[10px] text-[#736E64] font-mono">{item.timestamp}</span>
+                      </td>
+                      <td className="p-3 align-top space-y-1">
+                        <div>{getNatureBadge(item.nature)}</div>
+                        <div>{getConfidenceBadge(item.confidence)}</div>
+                      </td>
+                      <td className="p-3 align-top">
+                        <p className="font-semibold text-[#191715]">{item.title}</p>
+                        <p className="mt-1 text-[11px] text-[#57524A] line-clamp-2 leading-relaxed">
+                          {item.observedBehavior}
+                        </p>
+                      </td>
+                      <td className="p-3 font-mono font-bold text-center text-[#144A3F] align-top">
+                        {item.coverageWeight}%
+                      </td>
+                      <td className="p-3 text-right align-top space-x-1.5" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setActiveItemForModal(item)}
+                          className="btn-secondary text-[11px] py-1 px-2.5 min-h-0"
+                        >
+                          Inspect
+                        </button>
+                        {item.relatedTimelineEventIds[0] && (
+                          <Link
+                            to={`/verification?event=${item.relatedTimelineEventIds[0]}`}
+                            className="rounded bg-base px-2 py-1 text-[10px] font-mono font-bold text-brand hover:bg-elevated transition-colors inline-block"
+                            title="Jump to verification loop event"
+                          >
+                            Loop →
+                          </Link>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <h4 className="mt-1 text-xs font-bold text-white line-clamp-1">{comp.name}</h4>
-            <span className="mt-1.5 inline-block text-[10px] text-emerald-400 font-medium">
-              {comp.level}
-            </span>
-          </div>
-        ))}
-      </div>
 
-      {/* Filter and Search Ribbon */}
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#19273c] bg-[#080d17] p-3 text-xs">
-        <div className="flex items-center gap-2 flex-1 min-w-[240px]">
-          <SearchIcon size={14} className="text-slate-400 shrink-0" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by Evidence ID (EV-102), observed behavior, or finding keywords..."
-            className="w-full bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="text-slate-500 hover:text-slate-300 text-xs"
-            >
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Competency Filter */}
-          <div className="flex items-center gap-1.5 bg-[#0e1726] border border-[#1d2b42] px-2.5 py-1 rounded-lg">
-            <FilterIcon size={12} className="text-[#00f2fe]" />
-            <select
-              value={selectedCompetency}
-              onChange={(e) => setSelectedCompetency(e.target.value)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none border-none p-0 cursor-pointer"
-            >
-              <option value="ALL" className="bg-[#0f1726]">All Competencies</option>
-              {competencies.map((c: CompetencyMetric) => (
-                <option key={c.id} value={c.id} className="bg-[#0f1726]">
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Confidence Filter */}
-          <div className="flex items-center gap-1.5 bg-[#0e1726] border border-[#1d2b42] px-2.5 py-1 rounded-lg">
-            <select
-              value={selectedConfidence}
-              onChange={(e) => setSelectedConfidence(e.target.value)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none border-none p-0 cursor-pointer"
-            >
-              <option value="ALL" className="bg-[#0f1726]">All Confidence Levels</option>
-              <option value="CORROBORATED_FACT" className="bg-[#0f1726]">Corroborated Fact</option>
-              <option value="HIGH_CONFIDENCE" className="bg-[#0f1726]">High Confidence</option>
-              <option value="MEDIUM_CONFIDENCE" className="bg-[#0f1726]">Medium Confidence</option>
-              <option value="INFERRED_INTERPRETATION" className="bg-[#0f1726]">Inferred Interpretation</option>
-            </select>
-          </div>
-
-          {/* Nature Filter */}
-          <div className="flex items-center gap-1.5 bg-[#0e1726] border border-[#1d2b42] px-2.5 py-1 rounded-lg">
-            <select
-              value={selectedNature}
-              onChange={(e) => setSelectedNature(e.target.value)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none border-none p-0 cursor-pointer"
-            >
-              <option value="ALL" className="bg-[#0f1726]">All Evidence Types</option>
-              <option value="OBSERVED_EVENT" className="bg-[#0f1726]">Observed Telemetry</option>
-              <option value="SYNTHESIZED_FINDING" className="bg-[#0f1726]">Synthesized Finding</option>
-              <option value="COUNTER_EVIDENCE" className="bg-[#0f1726]">Counter-Evidence</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Evidence Cards Grid */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5">
-        {filteredItems.length === 0 ? (
-          <div className="col-span-full rounded-2xl border border-[#1b273d] bg-[#090f1b] p-12 text-center text-slate-400">
-            <p className="text-sm">No evidence items match your active filters.</p>
-            <button
-              onClick={() => {
-                setSelectedCompetency('ALL');
-                setSelectedConfidence('ALL');
-                setSelectedNature('ALL');
-                setSearchQuery('');
-              }}
-              className="mt-3 text-xs text-[#00f2fe] underline"
-            >
-              Clear all filters
-            </button>
+            {filteredItems.length === 0 && (
+              <div className="p-8 text-center text-xs text-[#736E64]">
+                No evidence records match the selected filters.
+              </div>
+            )}
           </div>
         ) : (
-          filteredItems.map((item: EvidenceItem) => (
-            <EvidenceCard
-              key={item.id}
-              item={item}
-              isSelected={item.id === selectedEvidenceId}
-              onSelect={() => {
-                setSelectedEvidenceId(item.id);
-                setActiveItemForModal(item);
-              }}
-            />
-          ))
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredItems.map((item) => (
+              <EvidenceCard
+                key={item.id}
+                item={item}
+                isSelected={selectedEvidenceId === item.id}
+                onSelect={() => setActiveItemForModal(item)}
+              />
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Inspector Drawer Modal */}
-      <EvidenceDrawer
-        item={activeItemForModal}
-        onClose={() => setActiveItemForModal(null)}
-      />
+      {/* Detail Inspection Modal */}
+      {activeItemForModal && (
+        <EvidenceDrawer
+          item={activeItemForModal}
+          onClose={() => setActiveItemForModal(null)}
+        />
+      )}
     </div>
   );
 };

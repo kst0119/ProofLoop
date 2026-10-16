@@ -1,549 +1,466 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   PlayIcon,
   CheckCircleIcon,
-  CodeIcon,
-  ShieldIcon,
-  TerminalIcon,
-  FileTextIcon,
   ArrowRightIcon,
-  SparklesIcon,
-  LayersIcon,
+  UserIcon,
+  EyeIcon,
 } from '../components/common/Icons';
 
 export const LandingPage: React.FC = () => {
-  const [activePreviewTab, setActivePreviewTab] = useState<'workspace' | 'loop' | 'report'>('workspace');
+  const [activeInteractiveScenario, setActiveInteractiveScenario] = useState<number>(0);
+
+  const interactiveScenarios = [
+    {
+      id: 'bool-invariant',
+      title: 'Explicit Boolean `false` Preservation',
+      badge: 'Edge Case Guard',
+      action: `// Refactored from naive 'val || existing' to strict check\nif (val !== undefined) {\n  target[key] = val; // Preserves twoFactorEnabled: false\n}`,
+      verification: 'PASS: TC-02 (Boundary assertion confirmed explicit false preservation)',
+      evidence: 'EVD-101: Corroborated Fact (95% weight) — Falsy coercion vulnerability remediated',
+      finding: 'AI Critical Literacy: Exemplary — Candidate rejected loose fallback logic',
+    },
+    {
+      id: 'proto-security',
+      title: 'Prototype Pollution Sanitization',
+      badge: 'Defensive Security',
+      action: `const DISALLOWED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);\nif (DISALLOWED_KEYS.has(key)) continue;`,
+      verification: 'PASS: TC-04 (Security check confirmed Object.prototype remains unpolluted)',
+      evidence: 'EVD-103: Corroborated Fact (90% weight) — Injection attack vectors stripped',
+      finding: 'Defensive Engineering: Exemplary — Proactively hardened recursive merge loop',
+    },
+    {
+      id: 'deep-merge',
+      title: 'Deep Nested Sibling Preservation',
+      badge: 'Data Integrity',
+      action: `if (typeof val === 'object' && val !== null && !Array.isArray(val)) {\n  recursiveMerge(target[key], val); // Preserves sibling keys\n}`,
+      verification: 'PASS: TC-03 (Nested notifications.email intact while notifications.push updated)',
+      evidence: 'EVD-102: Corroborated Fact (92% weight) — Atomic mutation audit log verified',
+      finding: 'System Architecture: Proficient — Correct recursion tree traversal',
+    },
+  ];
+
+  const currentScenario = interactiveScenarios[activeInteractiveScenario];
 
   return (
-    <div className="flex flex-col bg-[#070a10] text-slate-100 overflow-hidden">
-      {/* Hero Section */}
-      <section className="relative px-4 pt-16 pb-20 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        {/* Subtle background glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 h-96 w-[700px] rounded-full bg-gradient-to-tr from-cyan-500/10 via-teal-500/10 to-transparent blur-3xl pointer-events-none" />
-
-        <div className="text-center max-w-3xl mx-auto relative z-10">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#1e324c] bg-[#0c1524] px-3.5 py-1 text-xs text-slate-300 shadow-inner mb-6">
-            <span className="flex h-2 w-2 rounded-full bg-[#00f2fe]" />
-            <span className="font-mono text-[11px] text-[#38bdf8] font-semibold">
-              NEXT-GEN AI ENGINEERING EVALUATION
-            </span>
-            <span className="text-slate-500">•</span>
-            <span>ProofLoop Platform</span>
-          </div>
-
-          {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            Assess the engineering, <br />
-            <span className="bg-gradient-to-r from-[#00f2fe] via-[#2dd4bf] to-[#38bdf8] bg-clip-text text-transparent">
-              not just the output.
-            </span>
-          </h1>
-
-          {/* Description */}
-          <p className="mt-6 text-base sm:text-lg text-slate-300 leading-relaxed font-normal max-w-2xl mx-auto">
-            Evaluate how engineers reason, use AI, test assumptions, debug failures, and validate their work. ProofLoop organizes assessment activity into inspectable evidence to help reviewers make more informed decisions.
-          </p>
-
-          {/* CTAs */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
-            <Link
-              to="/assessment"
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#00f2fe] to-[#10b981] px-5 py-3 text-sm font-bold text-black shadow-lg shadow-teal-950/40 hover:opacity-95 transition-all hover:scale-[1.02]"
-            >
-              <PlayIcon size={14} />
-              <span>Launch Assessment Workspace</span>
-            </Link>
-
-            <Link
-              to="/report"
-              className="flex items-center gap-2 rounded-xl border border-[#223552] bg-[#0e1728] px-5 py-3 text-sm font-semibold text-slate-200 hover:border-[#00f2fe]/50 hover:bg-[#121d33] transition-all"
-            >
-              <FileTextIcon size={15} className="text-[#00f2fe]" />
-              <span>View Reviewer Report</span>
-            </Link>
-
-            <Link
-              to="/timeline"
-              className="flex items-center gap-2 rounded-xl border border-[#223552] bg-[#0e1728] px-5 py-3 text-sm font-semibold text-slate-200 hover:border-[#00f2fe]/50 hover:bg-[#121d33] transition-all"
-            >
-              <span>Explore Verification Loop</span>
-              <ArrowRightIcon size={14} className="text-[#38bdf8]" />
-            </Link>
-          </div>
-
-          {/* Quick Metrics Bar */}
-          <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4 border-t border-[#162236] pt-8 text-left">
-            <div className="rounded-xl border border-[#18263d] bg-[#09101d] p-3.5">
-              <span className="font-mono text-2xl font-bold text-white">100%</span>
-              <p className="mt-1 text-xs text-slate-400">Verifiable Telemetry (Zero Guesswork)</p>
-            </div>
-            <div className="rounded-xl border border-[#18263d] bg-[#09101d] p-3.5">
-              <span className="font-mono text-2xl font-bold text-[#00f2fe]">6/6</span>
-              <p className="mt-1 text-xs text-slate-400">Invariant Boundary Tests Passing</p>
-            </div>
-            <div className="rounded-xl border border-[#18263d] bg-[#09101d] p-3.5">
-              <span className="font-mono text-2xl font-bold text-emerald-400">4.8 / 5</span>
-              <p className="mt-1 text-xs text-slate-400">AI Critical Literacy Score</p>
-            </div>
-            <div className="rounded-xl border border-[#18263d] bg-[#09101d] p-3.5">
-              <span className="font-mono text-2xl font-bold text-[#c084fc]">3 mins</span>
-              <p className="mt-1 text-xs text-slate-400">Mean Time to Root-Cause (MTTR)</p>
-            </div>
-          </div>
+    <div className="flex flex-col bg-base text-primary">
+      {/* ==========================================================================
+          HERO SECTION (Spacious, Intentional, High-Contrast)
+          ========================================================================== */}
+      <section className="relative px-4 pt-16 pb-16 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full text-center">
+        {/* Eyebrow */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-default bg-surface px-3.5 py-1 text-xs text-secondary shadow-2xs mb-6">
+          <span className="flex h-2 w-2 rounded-full bg-forest" />
+          <span className="font-mono text-[11px] text-forest font-bold tracking-tight">
+            ENGINEERING ASSESSMENT, BACKED BY EVIDENCE
+          </span>
         </div>
 
-        {/* Interactive Product Preview */}
-        <div className="mt-14 rounded-2xl border border-[#21324d] bg-[#090f1b] shadow-2xl overflow-hidden">
-          {/* Mock Browser/Workspace Bar */}
-          <div className="flex flex-wrap items-center justify-between border-b border-[#1a293f] bg-[#060a12] px-4 py-2.5 gap-2">
+        {/* Headline */}
+        <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-primary leading-[1.12] max-w-4xl mx-auto">
+          Assess the engineering, <br className="hidden sm:inline" />
+          <span className="text-forest italic">not just the output.</span>
+        </h1>
+
+        {/* Supporting Copy */}
+        <p className="mt-6 text-base sm:text-lg text-secondary leading-relaxed font-normal max-w-2xl mx-auto">
+          ProofLoop evaluates how engineers reason, validate assumptions, handle edge cases, and debug failures—turning assessment activity into transparent, reviewable evidence.
+        </p>
+
+        {/* Action CTAs */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
+          <Link
+            to="/workspace"
+            className="btn-primary text-sm px-5 py-2.5 shadow-md"
+          >
+            <PlayIcon size={14} />
+            <span>Start a Demo Assessment</span>
+          </Link>
+
+          <a
+            href="#how-it-works"
+            className="btn-secondary text-sm px-4 py-2.5"
+          >
+            <span>Explore How It Works</span>
+            <ArrowRightIcon size={13} className="text-forest" />
+          </a>
+        </div>
+
+        {/* Compact, Refined Visual Preview: The 4-Stage Trace Pipeline */}
+        <div className="mt-14 max-w-4xl mx-auto rounded-xl border border-default bg-surface p-5 sm:p-6 shadow-sm text-left">
+          <div className="flex items-center justify-between border-b border-default pb-3 mb-4">
             <div className="flex items-center gap-2">
-              <div className="flex gap-1.5">
-                <span className="h-3 w-3 rounded-full bg-rose-500/80 inline-block" />
-                <span className="h-3 w-3 rounded-full bg-amber-500/80 inline-block" />
-                <span className="h-3 w-3 rounded-full bg-emerald-500/80 inline-block" />
-              </div>
-              <span className="ml-2 font-mono text-xs text-slate-400">
-                proofloop.platform // assessment-session-4091
+              <span className="h-2 w-2 rounded-full bg-[#126646]" />
+              <span className="font-mono text-xs font-bold text-primary">
+                The ProofLoop Trace Chain
               </span>
             </div>
-
-            {/* Segmented Interactive Preview Switcher */}
-            <div className="flex items-center rounded-lg border border-[#1c2c44] bg-[#0c1422] p-0.5 text-xs font-medium">
-              <button
-                onClick={() => setActivePreviewTab('workspace')}
-                className={`rounded-md px-3 py-1 transition-colors ${
-                  activePreviewTab === 'workspace'
-                    ? 'bg-[#18283e] text-[#00f2fe] font-semibold'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                1. Candidate Workspace
-              </button>
-              <button
-                onClick={() => setActivePreviewTab('loop')}
-                className={`rounded-md px-3 py-1 transition-colors ${
-                  activePreviewTab === 'loop'
-                    ? 'bg-[#18283e] text-[#00f2fe] font-semibold'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                2. Verification Loop
-              </button>
-              <button
-                onClick={() => setActivePreviewTab('report')}
-                className={`rounded-md px-3 py-1 transition-colors ${
-                  activePreviewTab === 'report'
-                    ? 'bg-[#18283e] text-[#00f2fe] font-semibold'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                3. Reviewer Synthesis
-              </button>
-            </div>
+            <span className="text-[11px] font-mono text-muted">
+              Deterministic Verification Architecture
+            </span>
           </div>
 
-          {/* Interactive Preview Canvas */}
-          <div className="p-4 sm:p-6 bg-[#090f1b]">
-            {activePreviewTab === 'workspace' && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
-                {/* Panel 1 */}
-                <div className="rounded-xl border border-[#1a293f] bg-[#070c16] p-4 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between text-slate-400 mb-2">
-                      <span className="text-[#00f2fe] font-semibold">TASK SPECIFICATION</span>
-                      <span className="text-amber-400">28:14</span>
-                    </div>
-                    <h3 className="font-sans font-bold text-sm text-white mb-2">
-                      PATCH /preferences with Explicit False
-                    </h3>
-                    <p className="font-sans text-xs text-slate-300 leading-relaxed">
-                      Preserve omitted fields, guard against boolean false coercion bugs, and implement prototype pollution filters.
-                    </p>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-[#162236] text-[11px] text-emerald-400 flex items-center gap-1.5">
-                    <CheckCircleIcon size={13} />
-                    <span>5 / 5 Criteria Verified</span>
-                  </div>
-                </div>
+          {/* 4 Pipeline Steps in a clean row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Step 1 */}
+            <div className="rounded-lg border border-default bg-surface-elevated p-3.5">
+              <span className="text-[10px] font-mono font-bold uppercase text-forest block mb-1">
+                1. Candidate Action
+              </span>
+              <h4 className="text-xs font-bold text-primary mb-1">Code & AI Activity</h4>
+              <p className="text-[11px] text-secondary leading-relaxed">
+                The candidate writes code, edits functions, or asks the sandboxed AI copilot for invariant suggestions.
+              </p>
+            </div>
 
-                {/* Panel 2 */}
-                <div className="rounded-xl border border-[#1a293f] bg-[#070c16] p-4">
-                  <div className="flex items-center justify-between text-slate-400 mb-2">
-                    <span className="text-purple-400 font-semibold">preferencesHandler.ts</span>
-                    <span>TypeScript</span>
-                  </div>
-                  <pre className="text-[11px] text-slate-300 overflow-x-auto leading-relaxed">
-{`function patchUserPreferences(current, patch) {
-  // CRITICAL FIX FOR EXPLICIT FALSE:
-  if (val !== undefined) {
-    if (typeof val === 'object' && !Array.isArray(val)) {
-      recursiveMerge(target[key], val);
-    } else {
-      target[key] = val; // preserved false!
-    }
-  }
-}`}
-                  </pre>
-                </div>
+            {/* Step 2 */}
+            <div className="rounded-lg border border-default bg-surface-elevated p-3.5">
+              <span className="text-[10px] font-mono font-bold uppercase text-forest block mb-1">
+                2. Verification Event
+              </span>
+              <h4 className="text-xs font-bold text-primary mb-1">Automated Test Runs</h4>
+              <p className="text-[11px] text-secondary leading-relaxed">
+                The platform executes deterministic tests to verify boundary conditions, safety invariants, and edge cases.
+              </p>
+            </div>
 
-                {/* Panel 3 */}
-                <div className="rounded-xl border border-[#1a293f] bg-[#070c16] p-4 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between text-slate-400 mb-2">
-                      <span className="text-teal-400 font-semibold">AI COPILOT TELEMETRY</span>
-                      <span>Latency: 780ms</span>
-                    </div>
-                    <div className="rounded bg-[#0c1626] p-2 text-slate-300 mb-2 text-[11px]">
-                      "Candidate prompted AI regarding Boolean false edge cases. Caught shallow merge bug in AI suggestion."
-                    </div>
-                  </div>
-                  <Link
-                    to="/assessment"
-                    className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-[#122238] py-2 text-xs font-semibold text-[#00f2fe] border border-[#1a385c] hover:bg-[#183152]"
-                  >
-                    <span>Open Live Assessment</span>
-                    <ArrowRightIcon size={12} />
-                  </Link>
-                </div>
-              </div>
-            )}
+            {/* Step 3 */}
+            <div className="rounded-lg border border-default bg-surface-elevated p-3.5">
+              <span className="text-[10px] font-mono font-bold uppercase text-terracotta block mb-1">
+                3. Evidence Record
+              </span>
+              <h4 className="text-xs font-bold text-primary mb-1">Audit-Ready Ledger</h4>
+              <p className="text-[11px] text-secondary leading-relaxed">
+                Every test pass, failure trace, and code revision is permanently indexed as verified proof in the evidence ledger.
+              </p>
+            </div>
 
-            {activePreviewTab === 'loop' && (
-              <div className="rounded-xl border border-[#1a293f] bg-[#070c16] p-5 space-y-3 font-sans">
-                <div className="flex items-center justify-between pb-3 border-b border-[#182338]">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <span>Candidate Problem-Solving Timeline (8 Events)</span>
-                    <span className="rounded bg-teal-950 px-2 py-0.5 text-[10px] font-mono text-teal-300 border border-teal-800">
-                      Chronological Trace
-                    </span>
-                  </h3>
-                  <Link to="/timeline" className="text-xs text-[#00f2fe] hover:underline flex items-center gap-1">
-                    <span>Full Loop Inspector</span>
-                    <ArrowRightIcon size={12} />
-                  </Link>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div className="rounded-lg border border-[#1f304b] bg-[#0a1220] p-3">
-                    <span className="font-mono text-[10px] text-purple-400">T+04:45 • AI_SUGGESTION</span>
-                    <h4 className="font-bold text-white mt-1">AI returns naive spread</h4>
-                    <p className="mt-1 text-[11px] text-slate-300">
-                      AI suggests shallow copy; candidate identifies that nested keys will be obliterated.
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-rose-900/40 bg-rose-950/20 p-3">
-                    <span className="font-mono text-[10px] text-rose-400">T+11:15 • TEST_FAIL</span>
-                    <h4 className="font-bold text-white mt-1">Test Run #1: 2 Failures</h4>
-                    <p className="mt-1 text-[11px] text-slate-300">
-                      System caught missing recursion and absence of prototype pollution guard.
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-emerald-900/40 bg-emerald-950/20 p-3">
-                    <span className="font-mono text-[10px] text-emerald-400">T+18:22 • VERIFIED</span>
-                    <h4 className="font-bold text-white mt-1">Surgical Fix & Green Tests</h4>
-                    <p className="mt-1 text-[11px] text-slate-300">
-                      Candidate implemented DISALLOWED_KEYS set and strict undefined check in 180 seconds.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activePreviewTab === 'report' && (
-              <div className="rounded-xl border border-[#1a293f] bg-[#070c16] p-5 space-y-4 font-sans">
-                <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#182338]">
-                  <div>
-                    <span className="font-mono text-xs text-[#00f2fe]">CANDIDATE: ALEX MERCER</span>
-                    <h3 className="text-base font-bold text-white">Staff AI Systems Engineer</h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded-lg bg-emerald-950 px-3 py-1 text-xs font-bold text-emerald-300 border border-emerald-800">
-                      Recommendation: Strong Hire
-                    </span>
-                    <Link to="/report" className="text-xs text-[#00f2fe] hover:underline flex items-center gap-1">
-                      <span>View Full Report</span>
-                      <ArrowRightIcon size={12} />
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div className="rounded-lg border border-[#1c2b42] bg-[#09111e] p-3">
-                    <span className="text-[10px] uppercase font-bold text-[#38bdf8]">AI Critical Literacy</span>
-                    <div className="text-xl font-bold font-mono text-white mt-1">4.8 / 5.0</div>
-                    <p className="text-[11px] text-slate-400 mt-1">Zero blind copies; tested AI suggestions against boundary cases.</p>
-                  </div>
-                  <div className="rounded-lg border border-[#1c2b42] bg-[#09111e] p-3">
-                    <span className="text-[10px] uppercase font-bold text-[#10b981]">Debugging Efficiency</span>
-                    <div className="text-xl font-bold font-mono text-white mt-1">4.9 / 5.0</div>
-                    <p className="text-[11px] text-slate-400 mt-1">Targeted root cause isolated within 3 minutes of test failure.</p>
-                  </div>
-                  <div className="rounded-lg border border-[#1c2b42] bg-[#09111e] p-3">
-                    <span className="text-[10px] uppercase font-bold text-[#c084fc]">Defensive Engineering</span>
-                    <div className="text-xl font-bold font-mono text-white mt-1">4.6 / 5.0</div>
-                    <p className="text-[11px] text-slate-400 mt-1">Added prototype pollution protection & immutability checks.</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Step 4 */}
+            <div className="rounded-lg border border-default bg-surface-elevated p-3.5">
+              <span className="text-[10px] font-mono font-bold uppercase text-forest block mb-1">
+                4. Reviewer Finding
+              </span>
+              <h4 className="text-xs font-bold text-primary mb-1">Transparent Evaluation</h4>
+              <p className="text-[11px] text-secondary leading-relaxed">
+                Interviewers assess how the candidate actually reasons and debugs, backed by verifiable evidence instead of black-box guesses.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 4-Step Verification Workflow Overview */}
-      <section className="border-t border-[#152033] bg-[#060910] px-4 py-20 sm:px-6 lg:px-8">
+      {/* ==========================================================================
+          SECTION 1: HOW PROOFLOOP WORKS (4 Deliberate Steps)
+          ========================================================================== */}
+      <section id="how-it-works" className="border-t border-default bg-surface py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <span className="rounded-full bg-[#0d1c2e] px-3 py-1 font-mono text-[11px] font-semibold text-[#00f2fe] border border-[#163b5c]">
-              THE PROOFLOOP VERIFICATION METHOD
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-forest">
+              ASSESSMENT WORKFLOW
             </span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              From Sandbox Activity to Corroborated Evidence
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary mt-2">
+              How ProofLoop Evaluates Engineering Craft
             </h2>
-            <p className="mt-3 text-sm text-slate-400 leading-relaxed">
-              Traditional code tests only check the final commit string. ProofLoop captures every hypothesis, test failure, and AI interaction into an explainable audit trail.
+            <p className="mt-2 text-sm text-secondary">
+              A transparent, deterministic evaluation cycle designed for engineering realism.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Step 1 */}
-            <div className="relative rounded-2xl border border-[#1c2b42] bg-[#0a1220] p-6 flex flex-col justify-between hover:border-[#00f2fe]/40 transition-colors">
+            <div className="rounded-xl border border-default bg-base p-5 flex flex-col justify-between">
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 text-[#00f2fe] border border-teal-500/30 font-mono font-bold text-sm mb-4">
-                  01
-                </div>
-                <h3 className="text-base font-bold text-white mb-2">Real Engineering Scenarios</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Candidates work on production-like tasks—such as partial patch APIs with explicit false preservation, deep recursion, and security invariants.
+                <span className="font-mono text-xl font-bold text-forest">01</span>
+                <h3 className="font-serif text-base font-bold text-primary mt-2">
+                  Real Production Task
+                </h3>
+                <p className="mt-2 text-xs text-secondary leading-relaxed">
+                  Candidates work on realistic system components—such as a partial patch engine—with subtle invariants, security boundaries, and edge cases.
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#162338] text-[11px] font-mono text-slate-400">
-                <span>Domain: Distributed APIs & Systems</span>
-              </div>
+              <span className="mt-4 text-[11px] font-mono text-muted">TypeScript & Node.js</span>
             </div>
 
-            {/* Step 2 */}
-            <div className="relative rounded-2xl border border-[#1c2b42] bg-[#0a1220] p-6 flex flex-col justify-between hover:border-[#00f2fe]/40 transition-colors">
+            <div className="rounded-xl border border-default bg-base p-5 flex flex-col justify-between">
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30 font-mono font-bold text-sm mb-4">
-                  02
-                </div>
-                <h3 className="text-base font-bold text-white mb-2">AI Copilot Telemetry</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Evaluate how developers prompt AI: Do they ask surgical edge-case questions, or do they blindly copy-paste hallucinated code into production files?
+                <span className="font-mono text-xl font-bold text-forest">02</span>
+                <h3 className="font-serif text-base font-bold text-primary mt-2">
+                  Telemetry Capture
+                </h3>
+                <p className="mt-2 text-xs text-secondary leading-relaxed">
+                  As candidates reason, test hypotheses, edit code, and query AI copilot, ProofLoop logs every meaningful action into a chronological timeline.
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#162338] text-[11px] font-mono text-slate-400">
-                <span>Metric: AI Critical Literacy</span>
-              </div>
+              <span className="mt-4 text-[11px] font-mono text-muted">Zero invasive surveillance</span>
             </div>
 
-            {/* Step 3 */}
-            <div className="relative rounded-2xl border border-[#1c2b42] bg-[#0a1220] p-6 flex flex-col justify-between hover:border-[#00f2fe]/40 transition-colors">
+            <div className="rounded-xl border border-default bg-base p-5 flex flex-col justify-between">
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono font-bold text-sm mb-4">
-                  03
-                </div>
-                <h3 className="text-base font-bold text-white mb-2">Verification Loop</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Watch code evolution over time. When a test fails, see whether the engineer forms systematic hypotheses or relies on random shotgun changes.
+                <span className="font-mono text-xl font-bold text-terracotta">03</span>
+                <h3 className="font-serif text-base font-bold text-primary mt-2">
+                  Evidence Indexing
+                </h3>
+                <p className="mt-2 text-xs text-secondary leading-relaxed">
+                  Telemetry events are categorized into an inspectable Evidence Ledger, separating direct automated observations from rubric evaluations.
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#162338] text-[11px] font-mono text-slate-400">
-                <span>Metric: MTTR & Root Cause Depth</span>
-              </div>
+              <span className="mt-4 text-[11px] font-mono text-muted">Corroborated proof points</span>
             </div>
 
-            {/* Step 4 */}
-            <div className="relative rounded-2xl border border-[#1c2b42] bg-[#0a1220] p-6 flex flex-col justify-between hover:border-[#00f2fe]/40 transition-colors">
+            <div className="rounded-xl border border-default bg-base p-5 flex flex-col justify-between">
               <div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-mono font-bold text-sm mb-4">
-                  04
-                </div>
-                <h3 className="text-base font-bold text-white mb-2">Evidence Ledger & Report</h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Every hiring recommendation is cross-referenced with exact Evidence IDs (e.g. EV-102), distinguishing corroborated facts from evaluator impressions.
+                <span className="font-mono text-xl font-bold text-forest">04</span>
+                <h3 className="font-serif text-base font-bold text-primary mt-2">
+                  Reviewer Dossier
+                </h3>
+                <p className="mt-2 text-xs text-secondary leading-relaxed">
+                  Hiring committees review an editorial report with criteria-level findings, evidence links, and verifiable test coverage.
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#162338] text-[11px] font-mono text-slate-400">
-                <span>Output: Explainable PDF Report</span>
-              </div>
+              <span className="mt-4 text-[11px] font-mono text-muted">Print & PDF ready</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Feature Cards Grid */}
-      <section className="px-4 py-20 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="rounded-full bg-[#112338] px-3 py-1 font-mono text-[11px] font-semibold text-[#38bdf8] border border-[#1a3d61]">
-            ENTERPRISE-GRADE CAPABILITIES
+      {/* ==========================================================================
+          SECTION 2: WHY EVIDENCE MATTERS (Concise Comparison)
+          ========================================================================== */}
+      <section id="why-evidence" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <span className="font-mono text-xs font-bold uppercase tracking-wider text-forest">
+            THE PARADIGM SHIFT
           </span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Designed for Staff Engineers & Hiring Committees
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-primary mt-2">
+            Output-Only Testing vs. Evidence-Driven Assessment
           </h2>
-          <p className="mt-3 text-sm text-slate-400 leading-relaxed">
-            Eliminate hours of inconclusive interview debates with factual telemetry and reproducible engineering artifacts.
+          <p className="mt-2 text-sm text-secondary">
+            In an era where AI generates code in seconds, assessing only the final output is obsolete.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1 */}
-          <Link
-            to="/assessment"
-            className="group rounded-2xl border border-[#1b283d] bg-[#090f1b] p-6 hover:border-[#00f2fe]/50 hover:bg-[#0c1424] transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/10 text-[#00f2fe] border border-teal-500/30 mb-4">
-                <CodeIcon size={20} />
-              </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-[#00f2fe] transition-colors">
-                Candidate Assessment Workspace
-              </h3>
-              <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                Monaco code editor with realistic file structure, invariant checklist, local test runner, and context-aware simulated copilot.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-[#00f2fe]">
-              <span>Explore Workspace</span>
-              <ArrowRightIcon size={13} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* Legacy Coding Tests */}
+          <div className="rounded-xl border border-default bg-surface p-6 shadow-xs">
+            <span className="font-mono text-xs font-bold text-muted uppercase">Traditional Output Tests</span>
+            <h3 className="font-serif text-lg font-bold text-primary mt-1">Binary Pass / Fail Puzzles</h3>
+            <ul className="mt-4 space-y-3 text-xs text-secondary">
+              <li className="flex items-start gap-2">
+                <span className="text-[#A82424] font-bold">✕</span>
+                <span>Focuses strictly on final output; ignores problem-solving reasoning.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#A82424] font-bold">✕</span>
+                <span>Vulnerable to memorization, LeetCode puzzle cramming, and unchecked LLM copy-paste.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#A82424] font-bold">✕</span>
+                <span>Produces subjective reviewer impressions without auditable proof.</span>
+              </li>
+            </ul>
+          </div>
 
-          {/* Card 2 */}
-          <Link
-            to="/timeline"
-            className="group rounded-2xl border border-[#1b283d] bg-[#090f1b] p-6 hover:border-[#00f2fe]/50 hover:bg-[#0c1424] transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/30 mb-4">
-                <TerminalIcon size={20} />
-              </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-purple-400 transition-colors">
-                Verification Loop Timeline
-              </h3>
-              <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                Step-by-step playback of prompt queries, AI suggestions, code diffs, failing test assertions, and corrective debugging actions.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-purple-400">
-              <span>Inspect Timeline</span>
-              <ArrowRightIcon size={13} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
+          {/* ProofLoop Evidence Engine */}
+          <div className="rounded-xl border border-forest bg-surface p-6 shadow-sm ring-1 ring-forest/20">
+            <span className="font-mono text-xs font-bold text-forest uppercase">ProofLoop Evidence Platform</span>
+            <h3 className="font-serif text-lg font-bold text-primary mt-1">Verifiable Engineering Telemetry</h3>
+            <ul className="mt-4 space-y-3 text-xs text-primary font-medium">
+              <li className="flex items-start gap-2">
+                <CheckCircleIcon size={14} className="text-forest mt-0.5 shrink-0" />
+                <span>Captures how candidates isolate regressions, validate assumptions, and debug.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircleIcon size={14} className="text-forest mt-0.5 shrink-0" />
+                <span>Encourages AI copilot usage while measuring prompt literacy and hallucination resistance.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircleIcon size={14} className="text-forest mt-0.5 shrink-0" />
+                <span>Compiles an immutable audit trail connecting findings directly to code diffs and test logs.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
 
-          {/* Card 3 */}
-          <Link
-            to="/evidence"
-            className="group rounded-2xl border border-[#1b283d] bg-[#090f1b] p-6 hover:border-[#00f2fe]/50 hover:bg-[#0c1424] transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 mb-4">
-                <LayersIcon size={20} />
-              </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-cyan-400 transition-colors">
-                Evidence Ledger
-              </h3>
-              <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                Structured ledger connecting observations to competency rubrics, with explicit confidence grades and counter-evidence tracking.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-cyan-400">
-              <span>View Evidence Ledger</span>
-              <ArrowRightIcon size={13} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
+      {/* ==========================================================================
+          SECTION 3: BUILT FOR TWO AUDIENCES (Candidates vs Reviewers)
+          ========================================================================== */}
+      <section id="audiences" className="border-t border-default bg-surface py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-forest">
+              DUAL PERSPECTIVE
+            </span>
+            <h2 className="font-serif text-3xl font-bold text-primary mt-2">
+              Designed for Both Sides of Technical Hiring
+            </h2>
+          </div>
 
-          {/* Card 4 */}
-          <Link
-            to="/report"
-            className="group rounded-2xl border border-[#1b283d] bg-[#090f1b] p-6 hover:border-[#00f2fe]/50 hover:bg-[#0c1424] transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 mb-4">
-                <FileTextIcon size={20} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {/* Candidates */}
+            <div className="rounded-xl border border-default bg-base p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#EAF4F1] text-forest">
+                  <UserIcon size={14} />
+                </div>
+                <h3 className="font-serif text-lg font-bold text-primary">For Candidates</h3>
               </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors">
-                Reviewer Evaluation Report
-              </h3>
-              <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                Executive summary, competency scores, evidence-backed strengths and weaknesses, interactive reviewer decisions, and print-ready PDF export.
+              <p className="text-xs text-secondary leading-relaxed">
+                Demonstrate genuine engineering capability in a realistic workbench with real acceptance criteria, sandboxed AI assistance, and instant test execution.
               </p>
+              <div className="mt-4 pt-3 border-t border-default">
+                <Link to="/workspace" className="btn-secondary text-xs w-full justify-center">
+                  Try Candidate Workspace
+                </Link>
+              </div>
             </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-              <span>Open Reviewer Report</span>
-              <ArrowRightIcon size={13} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
 
-          {/* Card 5 */}
-          <Link
-            to="/feedback"
-            className="group rounded-2xl border border-[#1b283d] bg-[#090f1b] p-6 hover:border-[#00f2fe]/50 hover:bg-[#0c1424] transition-all flex flex-col justify-between"
-          >
-            <div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30 mb-4">
-                <SparklesIcon size={20} />
+            {/* Reviewers */}
+            <div className="rounded-xl border border-default bg-base p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#FDF1ED] text-terracotta">
+                  <EyeIcon size={14} />
+                </div>
+                <h3 className="font-serif text-lg font-bold text-primary">For Reviewers & Hiring Committees</h3>
               </div>
-              <h3 className="text-lg font-bold text-white group-hover:text-amber-400 transition-colors">
-                Candidate & Reviewer Feedback
-              </h3>
-              <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                Structured feedback forms evaluating assessment realism, copilot utility, and process clarity with localStorage persistence.
+              <p className="text-xs text-secondary leading-relaxed">
+                Review substantiated engineering dossiers with criteria-level findings, chronological event playback, and evidence records that hold up to scrutiny.
               </p>
-            </div>
-            <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-amber-400">
-              <span>Submit Feedback</span>
-              <ArrowRightIcon size={13} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </Link>
-
-          {/* Card 6 */}
-          <div className="rounded-2xl border border-[#1c293e] bg-[#0b1322] p-6 flex flex-col justify-between">
-            <div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/30 mb-4">
-                <ShieldIcon size={20} />
+              <div className="mt-4 pt-3 border-t border-default">
+                <Link to="/report" className="btn-secondary text-xs w-full justify-center">
+                  Inspect Reviewer Dossier
+                </Link>
               </div>
-              <h3 className="text-lg font-bold text-white">
-                Responsible AI & Privacy
-              </h3>
-              <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                Sandboxed candidate environment with zero surveillance trackers. Objective fact-backed assessments remove unconscious interviewer bias.
-              </p>
-            </div>
-            <div className="mt-6 text-xs text-slate-400 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span>Zero Black-Box Scoring</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Responsible Assessment & Transparency Banner */}
-      <section className="border-t border-[#152033] bg-[#080d17] px-4 py-16 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto rounded-2xl border border-[#1e2f4a] bg-[#0c1526] p-8 shadow-xl">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-teal-500/10 text-[#00f2fe] border border-teal-500/30">
-              <ShieldIcon size={24} />
+      {/* ==========================================================================
+          SECTION 4: INTERACTIVE PRODUCT PREVIEW (Hands-on Verification Demonstration)
+          ========================================================================== */}
+      <section id="preview" className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+        <div className="text-center max-w-2xl mx-auto mb-10">
+          <span className="font-mono text-xs font-bold uppercase tracking-wider text-forest">
+            INTERACTIVE DEMO
+          </span>
+          <h2 className="font-serif text-3xl font-bold text-primary mt-2">
+            See How Candidate Actions Become Evidence
+          </h2>
+          <p className="mt-2 text-xs sm:text-sm text-secondary">
+            Select an engineering invariant scenario to inspect the resulting verification trail:
+          </p>
+        </div>
+
+        <div className="max-w-4xl mx-auto rounded-xl border border-default bg-surface p-6 shadow-sm">
+          {/* Scenario Tabs */}
+          <div className="flex flex-wrap gap-2 border-b border-default pb-4 mb-4">
+            {interactiveScenarios.map((sc, idx) => (
+              <button
+                key={sc.id}
+                onClick={() => setActiveInteractiveScenario(idx)}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                  activeInteractiveScenario === idx
+                    ? 'bg-forest text-white shadow-2xs'
+                    : 'bg-surface-elevated text-secondary hover:text-primary'
+                }`}
+              >
+                {sc.title}
+              </button>
+            ))}
+          </div>
+
+          {/* Active Scenario Preview Card */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-primary">{currentScenario.title}</h4>
+              <span className="rounded bg-[#EAF4F1] px-2 py-0.5 text-[10px] font-mono font-bold text-forest border border-[#9DCFC4]">
+                {currentScenario.badge}
+              </span>
             </div>
-            <div>
-              <h3 className="text-lg font-bold text-white">
-                Our Guarantee: Transparent, Evidence-Based Assessment
-              </h3>
-              <p className="mt-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
-                ProofLoop never rates candidates based on proprietary black-box algorithms or secret keystroke trackers. Instead, we structure concrete actions—the exact test failures, AI query formulation, and code diffs—so human engineers can make calibrated, unbiased hiring decisions based on demonstrated engineering skill.
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-mono text-[#00f2fe]">
-                <span>• No black-box AI scores</span>
-                <span>• Inspectable candidate telemetry</span>
-                <span>• Deterministic invariant verification</span>
+
+            {/* Code Mutation Box */}
+            <div className="rounded border border-default bg-[#14171A] text-[#E2E8F0] p-3 font-mono text-[11px] overflow-x-auto">
+              <span className="text-[#9E988C] text-[10px] block mb-1 font-bold">1. Candidate Code Refactor:</span>
+              <pre className="text-[#81C784]">{currentScenario.action}</pre>
+            </div>
+
+            {/* Verification & Evidence Result */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="rounded border border-default bg-surface-elevated p-3">
+                <span className="text-[10px] font-mono font-bold text-forest uppercase block mb-1">
+                  2. Automated Verification Log:
+                </span>
+                <p className="font-mono text-[11px] text-[#126646] font-semibold">{currentScenario.verification}</p>
               </div>
+              <div className="rounded border border-default bg-surface-elevated p-3">
+                <span className="text-[10px] font-mono font-bold text-terracotta uppercase block mb-1">
+                  3. Ledger Fact Generated:
+                </span>
+                <p className="text-[11px] text-secondary leading-snug">{currentScenario.evidence}</p>
+              </div>
+            </div>
+
+            <div className="rounded border border-default bg-base p-3 text-xs flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-mono font-bold text-primary uppercase block">
+                  4. Reviewer Finding:
+                </span>
+                <p className="text-[11px] text-secondary">{currentScenario.finding}</p>
+              </div>
+              <Link to="/workspace" className="btn-primary text-xs shrink-0 py-1.5 px-3 min-h-0">
+                Launch Assessment
+              </Link>
             </div>
           </div>
         </div>
       </section>
+
+      {/* ==========================================================================
+          SECTION 5: FINAL CTA
+          ========================================================================== */}
+      <section className="border-t border-default bg-surface-elevated py-14 px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-2xl mx-auto">
+          <h2 className="font-serif text-3xl font-bold text-primary">
+            Ready to Evaluate Engineering with Confidence?
+          </h2>
+          <p className="mt-2 text-xs sm:text-sm text-secondary leading-relaxed">
+            Start a live demonstration session. Explore the workspace, run simulated invariant tests, and inspect the resulting evidence dossier.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link to="/workspace" className="btn-primary text-xs px-5 py-2.5">
+              <PlayIcon size={13} />
+              <span>Start a Demo Assessment</span>
+            </Link>
+            <Link to="/report" className="btn-secondary text-xs px-4 py-2.5">
+              <span>Inspect Reviewer Dossier</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ==========================================================================
+          SECTION 6: MINIMAL FOOTER
+          ========================================================================== */}
+      <footer className="border-t border-default bg-surface py-8 px-4 sm:px-6 lg:px-8 text-xs text-muted">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="font-serif text-sm font-bold text-primary">ProofLoop</span>
+            <span>—</span>
+            <span>Assess the engineering, not just the output.</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-secondary">
+            <Link to="/workspace" className="hover:text-primary transition-colors">Workspace</Link>
+            <Link to="/verification" className="hover:text-primary transition-colors">Verification Loop</Link>
+            <Link to="/evidence" className="hover:text-primary transition-colors">Evidence Ledger</Link>
+            <Link to="/report" className="hover:text-primary transition-colors">Report</Link>
+            <Link to="/feedback" className="hover:text-primary transition-colors">Feedback</Link>
+          </div>
+
+          <p>© 2026 ProofLoop Systems Inc.</p>
+        </div>
+      </footer>
     </div>
   );
 };

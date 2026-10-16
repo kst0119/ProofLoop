@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import Editor from '@monaco-editor/react';
+import React, { useState, useRef } from 'react';
 import { useAssessment } from '../../context/AssessmentContext';
 import {
   CodeIcon,
@@ -18,9 +17,14 @@ export const CodeEditorPanel: React.FC = () => {
   } = useAssessment();
 
   const [copied, setCopied] = useState(false);
-  const [editorLoading, setEditorLoading] = useState(true);
-
   const activeFile = codeFiles.find((f) => f.id === activeFileId) || codeFiles[0];
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
+
+  const lines = activeFile.content.split('\n');
+  const lineCount = lines.length;
+  const charCount = activeFile.content.length;
 
   const handleCopy = () => {
     if (activeFile) {
@@ -30,13 +34,55 @@ export const CodeEditorPanel: React.FC = () => {
     }
   };
 
-  const lineCount = activeFile.content.split('\n').length;
-  const charCount = activeFile.content.length;
+  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = e.currentTarget.scrollTop;
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const val = activeFile.content;
+
+      // Insert 2 spaces
+      const newVal = val.substring(0, start) + '  ' + val.substring(end);
+      updateCode(activeFile.id, newVal);
+
+      requestAnimationFrame(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 2;
+      });
+    } else if (e.key === 'Enter') {
+      // Auto-indent: preserve leading spaces from current line
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const currentLine = activeFile.content.substring(0, start).split('\n').pop() || '';
+      const match = currentLine.match(/^(\s+)/);
+      if (match && match[1]) {
+        e.preventDefault();
+        const indent = match[1];
+        const val = activeFile.content;
+        const newVal = val.substring(0, start) + '\n' + indent + val.substring(textarea.selectionEnd);
+        updateCode(activeFile.id, newVal);
+
+        requestAnimationFrame(() => {
+          textarea.selectionStart = textarea.selectionEnd = start + 1 + indent.length;
+        });
+      }
+    }
+  };
 
   return (
-    <div className="flex h-full flex-col bg-[#0b101b] border-r border-[#1a2539]">
-      {/* Tab bar & Actions */}
-      <div className="flex h-10 items-center justify-between border-b border-[#182338] bg-[#070b13] px-2">
+    <div className="flex h-full flex-col bg-[#14171A] text-[#E2E8F0] overflow-hidden">
+      {/* File Tabs & Editor Controls */}
+      <div className="flex h-10 items-center justify-between border-b border-[#272C33] bg-[#1A1E22] px-2.5 shrink-0">
         {/* File Tabs */}
         <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           {codeFiles.map((file) => {
@@ -44,17 +90,18 @@ export const CodeEditorPanel: React.FC = () => {
             return (
               <button
                 key={file.id}
+                type="button"
                 onClick={() => setActiveFileId(file.id)}
-                className={`flex items-center gap-2 rounded-t px-3 py-1.5 text-xs font-mono font-medium transition-colors ${
+                className={`flex items-center gap-2 rounded-t px-3 py-1.5 text-xs font-mono font-medium transition-colors cursor-pointer ${
                   isSelected
-                    ? 'border-t-2 border-[#00f2fe] bg-[#0b101b] text-white shadow-sm'
-                    : 'text-slate-400 hover:bg-[#0e1524] hover:text-slate-200'
+                    ? 'border-t-2 border-[#144A3F] bg-[#14171A] text-white shadow-xs'
+                    : 'text-[#9E988C] hover:bg-[#20252A] hover:text-[#E2E8F0]'
                 }`}
               >
-                <CodeIcon size={13} className={isSelected ? 'text-[#00f2fe]' : 'text-slate-500'} />
+                <CodeIcon size={12} className={isSelected ? 'text-[#81C784]' : 'text-[#736E64]'} />
                 <span>{file.name}</span>
                 {file.isModified && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" title="Modified" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#B94A2D]" title="Modified buffer" />
                 )}
               </button>
             );
@@ -64,14 +111,15 @@ export const CodeEditorPanel: React.FC = () => {
         {/* Editor Controls */}
         <div className="flex items-center gap-2 text-xs">
           <button
+            type="button"
             onClick={handleCopy}
-            className="flex items-center gap-1 rounded border border-[#1e2e48] bg-[#0d1627] px-2 py-1 text-slate-300 hover:text-white hover:border-slate-500 transition-colors"
+            className="flex items-center gap-1 rounded border border-[#333A42] bg-[#20252A] px-2.5 py-1 text-[#D2CCC0] hover:text-white hover:border-[#4B5563] transition-colors cursor-pointer"
             title="Copy current file code"
           >
             {copied ? (
               <>
-                <CheckIcon size={12} className="text-emerald-400" />
-                <span className="text-[11px] text-emerald-400">Copied</span>
+                <CheckIcon size={12} className="text-[#81C784]" />
+                <span className="text-[11px] text-[#81C784]">Copied</span>
               </>
             ) : (
               <>
@@ -81,69 +129,69 @@ export const CodeEditorPanel: React.FC = () => {
             )}
           </button>
           <button
+            type="button"
             onClick={resetCode}
-            className="flex items-center gap-1 rounded border border-[#1e2e48] bg-[#0d1627] px-2 py-1 text-slate-300 hover:text-white hover:border-slate-500 transition-colors"
+            className="flex items-center gap-1 rounded border border-[#333A42] bg-[#20252A] px-2.5 py-1 text-[#D2CCC0] hover:text-white hover:border-[#4B5563] transition-colors cursor-pointer"
             title="Reset code to default starter file"
           >
             <RefreshCwIcon size={12} />
-            <span className="text-[11px]">Reset File</span>
+            <span className="text-[11px]">Reset</span>
           </button>
         </div>
       </div>
 
-      {/* Editor Main Canvas */}
-      <div className="relative flex-1 min-h-[300px]">
-        {editorLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#0b101b] z-10 text-xs text-slate-400 font-mono">
-            <span className="flex items-center gap-2">
-              <span className="h-3 w-3 animate-spin rounded-full border border-[#00f2fe] border-t-transparent"></span>
-              Mounting Monaco Environment...
-            </span>
-          </div>
-        )}
+      {/* Editor Main Canvas (Line Numbers + Interactive Code Buffer) */}
+      <div className="relative flex flex-1 h-full min-h-0 overflow-hidden bg-[#14171A]">
+        {/* Line Numbers Gutter */}
+        <div
+          ref={lineNumbersRef}
+          className="w-12 shrink-0 overflow-hidden border-r border-[#272C33] bg-[#101316] py-3 text-right font-mono text-[12px] leading-[22px] text-[#555C66] select-none pr-3"
+          aria-hidden="true"
+        >
+          {Array.from({ length: Math.max(lineCount, 25) }, (_, i) => (
+            <div key={i + 1}>{i + 1}</div>
+          ))}
+        </div>
 
-        <Editor
-          height="100%"
-          language={activeFile.language}
-          value={activeFile.content}
-          theme="vs-dark"
-          onMount={() => setEditorLoading(false)}
-          onChange={(value) => {
-            if (value !== undefined) {
-              updateCode(activeFile.id, value);
-            }
-          }}
-          options={{
-            fontFamily: "'JetBrains Mono', 'Fira Code', Consolas, monospace",
-            fontSize: 13,
-            lineHeight: 20,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            automaticLayout: true,
-            tabSize: 2,
-            readOnly: activeFile.isReadOnly || false,
-            renderLineHighlight: 'all',
-            cursorBlinking: 'smooth',
-            bracketPairColorization: { enabled: true },
-          }}
-        />
+        {/* Real-time Editable Textarea */}
+        <div className="relative flex-1 h-full min-h-0 overflow-hidden">
+          <textarea
+            ref={textareaRef}
+            value={activeFile.content}
+            onChange={(e) => updateCode(activeFile.id, e.target.value)}
+            onScroll={handleScroll}
+            onKeyDown={handleKeyDown}
+            readOnly={activeFile.isReadOnly}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoComplete="off"
+            autoCorrect="off"
+            placeholder="// Write your implementation here..."
+            className="h-full w-full resize-none border-0 bg-transparent p-3 font-mono text-[13px] leading-[22px] text-[#E2E8F0] caret-[#2DD4BF] focus:outline-none focus:ring-0 selection:bg-[#1E3A34] selection:text-white"
+            style={{
+              tabSize: 2,
+              whiteSpace: 'pre',
+              overflowWrap: 'normal',
+              overflowX: 'auto',
+            }}
+          />
+        </div>
       </div>
 
       {/* Editor Status Bar */}
-      <div className="flex h-6 items-center justify-between border-t border-[#182338] bg-[#070b13] px-3 font-mono text-[11px] text-slate-400">
+      <div className="flex h-7 items-center justify-between border-t border-[#272C33] bg-[#1A1E22] px-3 font-mono text-[11px] text-[#9E988C] shrink-0">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1 text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
-            Auto-saved to client state
+          <span className="flex items-center gap-1.5 text-[#81C784]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#81C784] animate-pulse"></span>
+            Editor Ready & Auto-saved
           </span>
-          <span className="text-slate-400">|</span>
-          <span>{activeFile.name}</span>
+          <span className="text-[#4B5563]">|</span>
+          <span className="text-[#D2CCC0]">{activeFile.name}</span>
         </div>
-        <div className="flex items-center gap-4 text-slate-400">
+        <div className="flex items-center gap-3 text-[#9E988C]">
           <span>{lineCount} lines</span>
           <span>{charCount} chars</span>
-          <span className="text-[#00f2fe]">TypeScript</span>
+          <span className="text-[#A5D6A7]">TypeScript 5.4</span>
           <span>UTF-8</span>
         </div>
       </div>

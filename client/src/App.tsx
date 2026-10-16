@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AssessmentProvider } from './context/AssessmentContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { LandingPage } from './pages/LandingPage';
@@ -12,34 +13,40 @@ import { FeedbackPage } from './pages/FeedbackPage';
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
-  const isWorkspace = location.pathname.startsWith('/assessment');
+  const isLandingPage = location.pathname === '/';
+  const isWorkspace = location.pathname.startsWith('/workspace') || location.pathname.startsWith('/assessment');
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#070a10] text-slate-100 font-sans selection:bg-[#00f2fe]/30 selection:text-white">
+    <div className="flex min-h-screen flex-col bg-base text-primary font-sans transition-colors duration-150">
       <Navbar />
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col min-h-0">
         <Routes>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/assessment" element={<AssessmentWorkspacePage />} />
-          <Route path="/timeline" element={<VerificationLoopPage />} />
+          <Route path="/workspace" element={<AssessmentWorkspacePage />} />
+          <Route path="/assessment" element={<Navigate to="/workspace" replace />} />
+          <Route path="/verification" element={<VerificationLoopPage />} />
+          <Route path="/timeline" element={<Navigate to="/verification" replace />} />
           <Route path="/evidence" element={<EvidenceLedgerPage />} />
           <Route path="/report" element={<ReviewerReportPage />} />
           <Route path="/feedback" element={<FeedbackPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      {!isWorkspace && <Footer />}
+      {/* Hide footer on full-height workspace; show minimal footer on other pages */}
+      {!isWorkspace && !isLandingPage && <Footer />}
     </div>
   );
 };
 
 export function App() {
   return (
-    <AssessmentProvider>
-      <BrowserRouter>
-        <AppLayout />
-      </BrowserRouter>
-    </AssessmentProvider>
+    <ThemeProvider>
+      <AssessmentProvider>
+        <BrowserRouter>
+          <AppLayout />
+        </BrowserRouter>
+      </AssessmentProvider>
+    </ThemeProvider>
   );
 }
 

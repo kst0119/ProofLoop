@@ -4,11 +4,42 @@ import {
   StarIcon,
   CheckCircleIcon,
   AlertCircleIcon,
-  ShieldIcon,
   SendIcon,
   RefreshCwIcon,
 } from '../components/common/Icons';
 import type { FeedbackEntry } from '../types';
+
+interface StarRatingInputProps {
+  label: string;
+  value: number;
+  onChange: (val: number) => void;
+}
+
+const StarRatingInput: React.FC<StarRatingInputProps> = ({
+  label,
+  value,
+  onChange,
+}) => (
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg border border-default bg-base p-3 text-xs">
+    <span className="font-semibold text-primary">{label}</span>
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          type="button"
+          key={star}
+          onClick={() => onChange(star)}
+          className="p-1 hover:scale-110 transition-transform focus:outline-none cursor-pointer"
+          aria-label={`${star} star rating for ${label}`}
+        >
+          <StarIcon size={16} filled={star <= value} />
+        </button>
+      ))}
+      <span className="ml-2 font-mono text-xs font-bold text-brand w-4">
+        {value}
+      </span>
+    </div>
+  </div>
+);
 
 export const FeedbackPage = () => {
   const { feedbackList, addFeedback } = useAssessment();
@@ -66,7 +97,7 @@ export const FeedbackPage = () => {
     // Reset form
     setComments('');
     setEmail('');
-    setTimeout(() => setSubmittedSuccessfully(false), 4000);
+    setTimeout(() => setSubmittedSuccessfully(false), 5000);
   };
 
   const handleReset = () => {
@@ -79,246 +110,237 @@ export const FeedbackPage = () => {
     setErrors({});
   };
 
-  const StarRatingInput = ({
-    label,
-    value,
-    onChange,
-  }: {
-    label: string;
-    value: number;
-    onChange: (val: number) => void;
-  }) => (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-[#1b273d] bg-[#090f1a] p-3 text-xs">
-      <span className="font-medium text-slate-200">{label}</span>
-      <div className="flex items-center gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            type="button"
-            key={star}
-            onClick={() => onChange(star)}
-            className="p-1 hover:scale-110 transition-transform"
-            aria-label={`${star} star rating for ${label}`}
-          >
-            <StarIcon size={18} filled={star <= value} />
-          </button>
-        ))}
-        <span className="ml-2 font-mono text-xs font-bold text-amber-400">{value} / 5</span>
-      </div>
-    </div>
-  );
 
   return (
-    <div className="flex-1 bg-[#070a10] text-slate-100 py-8 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto w-full">
-      {/* Page Header */}
-      <div className="border-b border-[#182338] pb-6">
-        <div className="flex items-center gap-2">
-          <span className="rounded bg-[#0d1f33] px-2.5 py-0.5 text-xs font-mono font-semibold text-[#00f2fe] border border-[#143e63]">
-            ASSESSMENT FEEDBACK
-          </span>
-          <span className="font-mono text-xs text-slate-400">
-            Local Demo Persistence Active
-          </span>
+    <div className="flex-1 bg-[#F8F6F0] text-[#191715] py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
+      {/* Editorial Page Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#DFD9CE] pb-6">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="rounded bg-[#EAF4F1] px-2.5 py-0.5 text-xs font-mono font-bold text-[#0F3D34] border border-[#9DCFC4]">
+              FEEDBACK & BENCHMARKING
+            </span>
+            <span className="font-mono text-xs text-[#736E64]">
+              Local State Persistent Storage
+            </span>
+          </div>
+          <h1 className="mt-2 font-serif text-2xl sm:text-3xl font-bold text-[#191715]">
+            Platform Feedback & Experience Benchmarks
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-[#57524A] max-w-2xl leading-relaxed">
+            Help calibrate our evidence-driven assessment rubrics. Share your perspective on engineering realism, invariant task clarity, and AI copilot utility.
+          </p>
         </div>
-        <h1 className="mt-2 text-2xl sm:text-3xl font-extrabold text-white">
-          Platform Evaluation & Experience Feedback
-        </h1>
-        <p className="mt-1 text-xs sm:text-sm text-slate-300 max-w-2xl">
-          Provide feedback on scenario realism, AI copilot helpfulness, and assessment transparency. Submissions are saved to local client storage.
-        </p>
       </div>
 
+      {/* Main Grid: Form on Left, Community/Reviewer Feed on Right */}
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Feedback Form (7 cols) */}
-        <div className="lg:col-span-7 rounded-2xl border border-[#1e2f4a] bg-[#0c1424] p-6 shadow-xl">
-          <div className="flex items-center justify-between border-b border-[#182338] pb-4 mb-4">
-            <h2 className="text-base font-bold text-white">Submit Platform Feedback</h2>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200"
-            >
-              <RefreshCwIcon size={12} />
-              Reset Form
-            </button>
-          </div>
-
-          {submittedSuccessfully && (
-            <div className="mb-5 rounded-xl border border-emerald-800/60 bg-emerald-950/40 p-4 text-xs text-emerald-300 flex items-start gap-2.5 animate-fade-in">
-              <CheckCircleIcon size={18} className="text-emerald-400 shrink-0 mt-0.5" />
-              <div>
-                <strong className="block text-emerald-200 font-semibold">
-                  Feedback Successfully Recorded!
-                </strong>
-                Thank you for evaluating ProofLoop. Your entry has been appended to the client session ledger below.
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Role Selector */}
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block mb-1.5">
-                Your Assessment Role:
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {[
-                  { id: 'candidate', label: 'Candidate' },
-                  { id: 'reviewer', label: 'Reviewer / HM' },
-                  { id: 'recruiter', label: 'Recruiter' },
-                  { id: 'interviewer', label: 'Staff Engineer' },
-                ].map((r) => (
-                  <button
-                    type="button"
-                    key={r.id}
-                    onClick={() => setRole(r.id as FeedbackEntry['authorRole'])}
-                    className={`rounded-lg border py-2 px-2 text-xs font-semibold capitalize transition-all ${
-                      role === r.id
-                        ? 'border-[#00f2fe] bg-[#122238] text-[#00f2fe] shadow-sm'
-                        : 'border-[#1b273d] bg-[#070c16] text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Star Ratings */}
-            <div className="space-y-2.5 pt-2">
-              <StarRatingInput
-                label="Scenario Realism & Depth"
-                value={ratingRealism}
-                onChange={setRatingRealism}
-              />
-              <StarRatingInput
-                label="AI Copilot Utility & Guidance"
-                value={ratingAIUtility}
-                onChange={setRatingAIUtility}
-              />
-              <StarRatingInput
-                label="Specification & Criteria Clarity"
-                value={ratingClarity}
-                onChange={setRatingClarity}
-              />
-              <StarRatingInput
-                label="Overall Platform Experience"
-                value={ratingOverall}
-                onChange={setRatingOverall}
-              />
-            </div>
-
-            {/* Email (Optional) */}
-            <div>
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block mb-1">
-                Contact Email <span className="text-slate-500 font-normal">(Optional for follow-up)</span>
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="developer@company.com"
-                className="w-full rounded-lg border border-[#1e2e46] bg-[#070c16] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-[#00f2fe] focus:outline-none"
-              />
-              {errors.email && (
-                <span className="text-[11px] text-rose-400 mt-1 block">{errors.email}</span>
-              )}
-            </div>
-
-            {/* Detailed Comments */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
-                  Detailed Feedback & Observations <span className="text-[#00f2fe]">*</span>
-                </label>
-                <span className="text-[11px] font-mono text-slate-500">
-                  {comments.length} chars
-                </span>
-              </div>
-              <textarea
-                rows={4}
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                placeholder="Share your thoughts on the Verification Loop, evidence inspectability, or assessment workflow..."
-                className={`w-full rounded-lg border bg-[#070c16] p-3 text-xs text-white placeholder-slate-500 focus:outline-none ${
-                  errors.comments ? 'border-rose-500' : 'border-[#1e2e46] focus:border-[#00f2fe]'
-                }`}
-              />
-              {errors.comments && (
-                <span className="text-[11px] text-rose-400 mt-1 block flex items-center gap-1">
-                  <AlertCircleIcon size={12} /> {errors.comments}
-                </span>
-              )}
-            </div>
-
-            {/* Submit Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#182338]">
-              <span className="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
-                <ShieldIcon size={12} className="text-[#00f2fe]" /> Saved to localStorage
-              </span>
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#00f2fe] to-[#10b981] px-5 py-2.5 text-xs font-bold text-black shadow-md hover:opacity-95 disabled:opacity-50 transition-all"
-              >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCwIcon size={13} className="animate-spin text-black" />
-                    <span>Recording...</span>
-                  </>
-                ) : (
-                  <>
-                    <SendIcon size={13} />
-                    <span>Submit Platform Feedback</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* Recent Submissions Feed (5 cols) */}
-        <div className="lg:col-span-5 flex flex-col space-y-4">
-          <div className="rounded-2xl border border-[#1b283d] bg-[#090f1a] p-5">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-white mb-1">
-              Local Submissions History ({feedbackList.length})
-            </h3>
-            <p className="text-xs text-slate-400 mb-4">
-              Stored in client browser storage for persistent demo review.
+        {/* Form Column */}
+        <div className="lg:col-span-7">
+          <div className="rounded-xl border border-[#DFD9CE] bg-white p-6 sm:p-7 shadow-sm">
+            <h2 className="font-serif text-lg font-bold text-[#191715] mb-1">
+              Submit Experience Feedback
+            </h2>
+            <p className="text-xs text-[#57524A] mb-5">
+              Submissions are stored in local client state for demo persistence.
             </p>
 
-            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
-              {feedbackList.map((entry: FeedbackEntry) => (
+            {submittedSuccessfully && (
+              <div className="mb-6 rounded-lg border border-[#A3DBC4] bg-[#EDF7F2] p-4 text-[#126646] animate-fade-in text-xs flex items-center gap-2">
+                <CheckCircleIcon size={16} />
+                <span>Thank you! Your feedback has been recorded in the local session registry.</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Role Selection */}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-[#191715] block mb-2 font-mono">
+                  I am evaluating ProofLoop as:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {(['reviewer', 'candidate', 'recruiter', 'interviewer'] as const).map((r) => {
+                    const isSelected = role === r;
+                    return (
+                      <button
+                        type="button"
+                        key={r}
+                        onClick={() => setRole(r)}
+                        className={`rounded-md border py-2 px-3 text-xs font-bold capitalize transition-all ${
+                          isSelected
+                            ? 'border-[#144A3F] bg-[#144A3F] text-white shadow-xs'
+                            : 'border-[#DFD9CE] bg-[#FAF8F5] text-[#57524A] hover:text-[#191715] hover:border-[#CAC2B3]'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Star Rating Inputs */}
+              <div className="space-y-2.5 pt-2">
+                <StarRatingInput
+                  label="Engineering Scenario Realism"
+                  value={ratingRealism}
+                  onChange={setRatingRealism}
+                />
+                <StarRatingInput
+                  label="AI Copilot & Telemetry Utility"
+                  value={ratingAIUtility}
+                  onChange={setRatingAIUtility}
+                />
+                <StarRatingInput
+                  label="Invariant Task Clarity & Rubrics"
+                  value={ratingClarity}
+                  onChange={setRatingClarity}
+                />
+                <StarRatingInput
+                  label="Overall Experience & Credibility"
+                  value={ratingOverall}
+                  onChange={setRatingOverall}
+                />
+              </div>
+
+              {/* Comments Textarea */}
+              <div className="pt-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-[#191715] block mb-1 font-mono">
+                  Constructive Observations & Notes:
+                </label>
+                <textarea
+                  value={comments}
+                  onChange={(e) => {
+                    setComments(e.target.value);
+                    if (errors.comments) setErrors((prev) => ({ ...prev, comments: '' }));
+                  }}
+                  rows={4}
+                  placeholder="What worked well during the session? Did the evidence ledger accurately reflect the candidate's engineering reasoning? (Minimum 15 characters)"
+                  className={`w-full rounded-md border p-3 text-xs text-[#191715] placeholder-[#736E64] focus:outline-none transition-colors ${
+                    errors.comments
+                      ? 'border-[#F7B5B5] bg-[#FDF1F1]'
+                      : 'border-[#DFD9CE] bg-[#FAF8F5] focus:border-[#144A3F] focus:bg-white'
+                  }`}
+                />
+                {errors.comments && (
+                  <span className="mt-1 flex items-center gap-1 text-[11px] text-[#A82424]">
+                    <AlertCircleIcon size={12} /> {errors.comments}
+                  </span>
+                )}
+              </div>
+
+              {/* Optional Email */}
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-[#191715] block mb-1 font-mono">
+                  Email Address (Optional for verification):
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) setErrors((prev) => ({ ...prev, email: '' }));
+                  }}
+                  placeholder="e.g. reviewer@engineering.org"
+                  className={`w-full rounded-md border px-3 py-2 text-xs text-[#191715] placeholder-[#736E64] focus:outline-none transition-colors ${
+                    errors.email
+                      ? 'border-[#F7B5B5] bg-[#FDF1F1]'
+                      : 'border-[#DFD9CE] bg-[#FAF8F5] focus:border-[#144A3F] focus:bg-white'
+                  }`}
+                />
+                {errors.email && (
+                  <span className="mt-1 flex items-center gap-1 text-[11px] text-[#A82424]">
+                    <AlertCircleIcon size={12} /> {errors.email}
+                  </span>
+                )}
+              </div>
+
+              {/* Form Action Buttons at End of Form */}
+              <div className="pt-3 border-t border-[#DFD9CE] flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="btn-secondary text-xs"
+                >
+                  Clear Form
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn-primary text-xs"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <RefreshCwIcon size={12} className="animate-spin text-white" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <SendIcon size={12} />
+                      <span>Submit Assessment Feedback</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Community / Evaluator Feed Column */}
+        <div className="lg:col-span-5 space-y-4">
+          <div className="rounded-xl border border-[#DFD9CE] bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-[#DFD9CE] pb-3 mb-4">
+              <div>
+                <h3 className="font-serif text-base font-bold text-[#191715]">
+                  Recorded Evaluator Submissions
+                </h3>
+                <span className="text-xs text-[#736E64] font-mono">
+                  {feedbackList.length} Entries in Local Registry
+                </span>
+              </div>
+              <span className="rounded bg-[#EAF4F1] px-2 py-0.5 text-[10px] font-mono font-bold text-[#144A3F] border border-[#9DCFC4]">
+                PERSISTENT
+              </span>
+            </div>
+
+            <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
+              {feedbackList.map((entry) => (
                 <div
                   key={entry.id}
-                  className="rounded-xl border border-[#1a263a] bg-[#0c1422] p-3.5 text-xs space-y-2 hover:border-[#273a56] transition-colors"
+                  className="rounded-lg border border-[#DFD9CE] bg-[#FAF8F5] p-3.5 text-xs text-[#191715]"
                 >
-                  <div className="flex items-center justify-between text-[11px] border-b border-[#162234] pb-2">
-                    <span className="rounded bg-[#122238] px-2 py-0.5 font-mono text-[10px] font-semibold text-[#38bdf8] border border-[#1b3c5e] uppercase">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-mono text-[10px] font-bold text-[#144A3F] uppercase">
                       {entry.authorRole}
                     </span>
-                    <span className="font-mono text-slate-400">{entry.timestamp}</span>
+                    <span className="text-[10px] font-mono text-[#736E64]">
+                      {entry.timestamp}
+                    </span>
                   </div>
 
-                  {/* Stars summary */}
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400">Overall Rating:</span>
-                    <div className="flex items-center gap-1 text-amber-400">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <StarIcon key={s} size={12} filled={s <= entry.ratingOverall} />
-                      ))}
-                    </div>
+                  <div className="flex items-center gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <StarIcon
+                        key={star}
+                        size={12}
+                        filled={star <= entry.ratingOverall}
+                      />
+                    ))}
+                    <span className="text-[11px] font-mono font-semibold text-[#57524A] ml-1">
+                      {entry.ratingOverall}.0 / 5.0
+                    </span>
                   </div>
 
-                  <p className="text-slate-300 leading-relaxed font-sans text-xs">
+                  <p className="text-[#4A463F] leading-relaxed text-[11px]">
                     "{entry.comments}"
                   </p>
 
-                  {entry.email && (
-                    <span className="text-[10px] font-mono text-slate-500 block truncate">
-                      {entry.email}
-                    </span>
-                  )}
+                  <div className="mt-2.5 pt-2 border-t border-[#DFD9CE] flex items-center justify-between text-[10px] text-[#736E64] font-mono">
+                    <span>Realism: {entry.ratingRealism}/5</span>
+                    <span>AI Utility: {entry.ratingAIUtility}/5</span>
+                    <span>Clarity: {entry.ratingClarity}/5</span>
+                  </div>
                 </div>
               ))}
             </div>

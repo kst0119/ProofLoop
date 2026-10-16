@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import type {
   AIMessage,
   CandidateSession,
@@ -186,16 +186,16 @@ export const AssessmentProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [testCases]);
 
-  const updateCode = (fileId: string, content: string) => {
+  const updateCode = useCallback((fileId: string, content: string) => {
     setCodeFiles((prev) =>
       prev.map((f) => (f.id === fileId ? { ...f, content, isModified: true } : f))
     );
-  };
+  }, []);
 
-  const resetCode = () => {
+  const resetCode = useCallback(() => {
     setCodeFiles(starterCodeFiles);
     localStorage.removeItem(LOCAL_STORAGE_KEY_CODE);
-  };
+  }, []);
 
   const toggleRequirement = (id: string) => {
     setRequirements((prev) =>

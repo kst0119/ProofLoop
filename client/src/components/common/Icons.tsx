@@ -14,30 +14,29 @@ export const LogoIcon: React.FC<IconProps> = ({ size = 28, className = '' }) => 
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     className={className}
+    aria-hidden="true"
   >
-    <defs>
-      <linearGradient id="logo-teal-cyan" x1="2" y1="2" x2="30" y2="30" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stopColor="#00f2fe" />
-        <stop offset="60%" stopColor="#14b8a6" />
-        <stop offset="100%" stopColor="#10b981" />
-      </linearGradient>
-    </defs>
+    {/* Interconnected Verification Loop Motif */}
+    <rect width="32" height="32" rx="7" fill="#144A3F" />
+    {/* Left Loop - Candidate Telemetry Track */}
     <path
-      d="M10 16C10 12.6863 12.6863 10 16 10C19.3137 10 22 12.6863 22 16C22 19.3137 19.3137 22 16 22C13.5 22 12 20 10 17.5"
-      stroke="url(#logo-teal-cyan)"
-      strokeWidth="2.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <path
-      d="M22 16C22 19.3137 19.3137 22 16 22C12.6863 22 10 19.3137 10 16C10 12.6863 12.6863 10 16 10C18.5 10 20 12 22 14.5"
-      stroke="#38bdf8"
+      d="M11 16C11 13.2386 13.2386 11 16 11C18.7614 11 21 13.2386 21 16C21 18.7614 18.7614 21 16 21C13.5 21 11.5 19 11 16.5"
+      stroke="#F8F6F0"
       strokeWidth="2.2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      opacity="0.85"
     />
-    <circle cx="16" cy="16" r="2.2" fill="#00f2fe" />
+    {/* Trace Connector */}
+    <path
+      d="M21 16C21 18.7614 18.7614 21 16 21C13.2386 21 11 18.7614 11 16C11 13.2386 13.2386 11 16 11C18.5 11 20.5 13 21 15.5"
+      stroke="#B94A2D"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    {/* Verification Checkpoint Node */}
+    <circle cx="16" cy="16" r="2.2" fill="#F8F6F0" />
+    <circle cx="16" cy="16" r="1.1" fill="#144A3F" />
   </svg>
 );
 
@@ -256,3 +255,24 @@ export const EyeIcon: React.FC<IconProps> = ({ size = 20, className = '' }) => (
     <circle cx="12" cy="12" r="3" />
   </svg>
 );
+
+export const SunIcon: React.FC<IconProps> = ({ size = 20, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+);
+
+export const MoonIcon: React.FC<IconProps> = ({ size = 20, className = '' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+  </svg>
+);
+

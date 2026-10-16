@@ -4,7 +4,6 @@ import {
   BotIcon,
   SendIcon,
   SparklesIcon,
-  ShieldIcon,
   CodeIcon,
 } from '../common/Icons';
 
@@ -32,26 +31,26 @@ export const AIAssistantPanel: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full flex-col bg-[#080d16] text-slate-200">
+    <div className="flex h-full flex-col bg-surface text-primary">
       {/* Panel Header */}
-      <div className="flex h-10 items-center justify-between border-b border-[#182338] bg-[#070b13] px-3">
+      <div className="flex h-10 items-center justify-between border-b border-default bg-base px-3.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded bg-teal-500/10 text-[#00f2fe] border border-teal-500/30">
-            <BotIcon size={14} />
+          <div className="flex h-6 w-6 items-center justify-center rounded bg-[#EAF4F1] dark:bg-[#133026] text-brand border border-[#9DCFC4] dark:border-[#225542]">
+            <BotIcon size={13} />
           </div>
-          <span className="text-xs font-semibold text-white">AI Copilot</span>
-          <span className="rounded bg-[#122336] px-1.5 py-0.2 text-[10px] font-mono text-[#38bdf8] border border-[#1b3d5c]">
-            Sandboxed
+          <span className="text-xs font-bold text-primary">ProofLoop AI Copilot</span>
+          <span className="rounded bg-surface px-1.5 py-0.2 text-[9px] font-mono font-semibold text-brand border border-default">
+            SANDBOXED
           </span>
         </div>
-        <div className="flex items-center gap-1 text-[11px] text-slate-400 font-mono">
-          <SparklesIcon size={12} className="text-[#00f2fe]" />
+        <div className="flex items-center gap-1 text-[11px] text-muted font-mono">
+          <SparklesIcon size={12} className="text-brand" />
           <span>Telemetry Active</span>
         </div>
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3 bg-base">
         {aiMessages.map((msg) => (
           <div
             key={msg.id}
@@ -60,24 +59,30 @@ export const AIAssistantPanel: React.FC = () => {
             }`}
           >
             <div
-              className={`max-w-[92%] rounded-lg p-2.5 text-xs leading-relaxed ${
+              className={`max-w-[92%] rounded-lg p-3 text-xs leading-relaxed ${
                 msg.role === 'user'
-                  ? 'bg-[#183152] text-white border border-[#2b4d79]'
-                  : 'bg-[#0f1726] text-slate-200 border border-[#1e2e46]'
+                  ? 'bg-brand text-white shadow-xs'
+                  : 'bg-surface text-primary border border-default shadow-2xs'
               }`}
             >
-              <div className="flex items-center justify-between gap-3 mb-1 text-[10px] font-mono opacity-60">
-                <span className="font-semibold">{msg.role === 'user' ? 'Candidate' : 'ProofLoop AI Copilot'}</span>
+              <div
+                className={`flex items-center justify-between gap-3 mb-1 text-[10px] font-mono ${
+                  msg.role === 'user' ? 'text-white/80' : 'text-muted'
+                }`}
+              >
+                <span className="font-bold">
+                  {msg.role === 'user' ? 'Candidate' : 'ProofLoop Copilot'}
+                </span>
                 <span>{msg.timestamp}</span>
               </div>
 
               <p className="whitespace-pre-wrap">{msg.text}</p>
 
               {msg.codeSnippet && (
-                <div className="mt-2 rounded border border-[#263750] bg-[#060a12] p-2 font-mono text-[11px] text-teal-300 overflow-x-auto">
-                  <div className="flex items-center justify-between text-[10px] text-slate-400 mb-1 border-b border-[#1b2a3f] pb-0.5">
-                    <span className="flex items-center gap-1">
-                      <CodeIcon size={10} /> Suggested Pattern
+                <div className="mt-2.5 rounded border border-[#272C33] bg-[#14171A] p-2.5 font-mono text-[11px] text-[#81C784] overflow-x-auto">
+                  <div className="flex items-center justify-between text-[10px] text-[#9E988C] mb-1 border-b border-[#272C33] pb-1">
+                    <span className="flex items-center gap-1 font-bold">
+                      <CodeIcon size={10} /> Suggested Pattern (Verify Invariants)
                     </span>
                   </div>
                   <pre>{msg.codeSnippet}</pre>
@@ -85,7 +90,13 @@ export const AIAssistantPanel: React.FC = () => {
               )}
 
               {msg.telemetry && (
-                <div className="mt-1.5 flex items-center gap-3 pt-1 border-t border-[#1a273b] text-[10px] font-mono text-slate-400">
+                <div
+                  className={`mt-2 flex items-center gap-3 pt-1 border-t text-[10px] font-mono ${
+                    msg.role === 'user'
+                      ? 'border-white/20 text-white/70'
+                      : 'border-default text-muted'
+                  }`}
+                >
                   <span>Tokens: {msg.telemetry.tokens}</span>
                   <span>Latency: {msg.telemetry.executionTimeMs}ms</span>
                   <span>Confidence: {msg.telemetry.confidence}</span>
@@ -96,58 +107,51 @@ export const AIAssistantPanel: React.FC = () => {
         ))}
 
         {isAiTyping && (
-          <div className="flex items-center gap-2 rounded-lg bg-[#0f1726] p-2.5 text-xs text-slate-400 border border-[#1e2e46] w-fit">
-            <span className="h-2 w-2 animate-ping rounded-full bg-[#00f2fe]" />
-            <span className="font-mono text-[11px]">AI is generating contextual verification response...</span>
+          <div className="flex items-center gap-2 rounded-lg bg-surface p-2.5 text-xs text-secondary border border-default w-fit shadow-2xs">
+            <span className="h-2 w-2 animate-ping rounded-full bg-brand" />
+            <span className="font-mono text-[11px]">Synthesizing telemetry response...</span>
           </div>
         )}
       </div>
 
-      {/* Suggested prompt chips */}
-      <div className="border-t border-[#182338] bg-[#070b13] p-2">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
-          <SparklesIcon size={11} className="text-teal-400" />
-          <span>Quick Invariant Prompts:</span>
-        </div>
+      {/* Suggested Invariant Prompt Chips */}
+      <div className="border-t border-default bg-surface px-3 py-2">
+        <span className="text-[10px] font-mono font-bold uppercase text-muted block mb-1.5">
+          Engineering Invariant Queries:
+        </span>
         <div className="flex flex-wrap gap-1.5">
-          {suggestedPrompts.map((prompt, idx) => (
+          {suggestedPrompts.map((p, idx) => (
             <button
               key={idx}
-              onClick={() => handleChipClick(prompt)}
+              onClick={() => handleChipClick(p)}
               disabled={isAiTyping}
-              className="rounded border border-[#1e2e46] bg-[#0d1627] px-2 py-1 text-[11px] text-slate-300 hover:border-[#00f2fe]/50 hover:text-white transition-colors text-left disabled:opacity-50"
+              className="rounded border border-default bg-base px-2 py-0.5 text-[10px] text-secondary hover:border-brand hover:text-primary transition-colors disabled:opacity-50 text-left"
             >
-              {prompt}
+              {p}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Input query form */}
-      <form onSubmit={handleSubmit} className="border-t border-[#182338] bg-[#090e18] p-2.5">
-        <div className="flex items-center gap-2">
+      {/* Input bar */}
+      <form onSubmit={handleSubmit} className="border-t border-default bg-surface p-3">
+        <div className="relative flex items-center">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Ask AI Copilot for invariant hints, edge-case tests, or debugging..."
             disabled={isAiTyping}
-            className="flex-1 rounded-md border border-[#20314a] bg-[#05080f] px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-[#00f2fe] focus:outline-none"
+            placeholder="Ask AI Copilot for invariant analysis or edge cases..."
+            className="w-full rounded-md border border-default bg-base px-3 py-2 pr-10 text-xs text-primary placeholder-muted focus:border-brand focus:bg-surface focus:outline-none transition-colors"
           />
           <button
             type="submit"
             disabled={!inputText.trim() || isAiTyping}
-            className="flex h-8 w-8 items-center justify-center rounded-md bg-[#00f2fe] text-black hover:bg-[#38bdf8] disabled:opacity-40 transition-colors shrink-0"
-            aria-label="Send Query"
+            className="absolute right-1.5 flex h-7 w-7 items-center justify-center rounded bg-brand text-white hover:opacity-90 disabled:opacity-40 transition-colors"
+            aria-label="Send message to AI Copilot"
           >
-            <SendIcon size={14} />
+            <SendIcon size={12} />
           </button>
-        </div>
-        <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-          <span className="flex items-center gap-1">
-            <ShieldIcon size={10} className="text-teal-400" /> Simulated local Copilot
-          </span>
-          <span>Logged to Verification Timeline</span>
         </div>
       </form>
     </div>

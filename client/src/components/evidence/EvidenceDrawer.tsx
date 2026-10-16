@@ -6,7 +6,6 @@ import {
   ShieldIcon,
   CheckCircleIcon,
   ExternalLinkIcon,
-  CodeIcon,
 } from '../common/Icons';
 
 interface EvidenceDrawerProps {
@@ -18,24 +17,25 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({ item, onClose })
   if (!item) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-2xl border border-[#233550] bg-[#0b121e] shadow-2xl overflow-hidden animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl border border-[#DFD9CE] bg-white shadow-2xl overflow-hidden animate-fade-in text-[#191715]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#1a283d] bg-[#070b13] px-6 py-4">
+        <div className="flex items-center justify-between border-b border-[#DFD9CE] bg-[#FAF8F5] px-6 py-4">
           <div className="flex items-center gap-3">
-            <span className="font-mono text-sm font-bold text-[#00f2fe] bg-[#0c1e30] px-2.5 py-1 rounded border border-[#164166]">
+            <span className="font-mono text-xs font-bold text-[#144A3F] bg-[#EAF4F1] px-2.5 py-1 rounded border border-[#9DCFC4]">
               {item.id}
             </span>
             <div>
-              <h2 className="text-base font-bold text-white">{item.title}</h2>
-              <span className="text-xs text-slate-400 font-mono">
+              <h2 className="font-serif text-base font-bold text-[#191715]">{item.title}</h2>
+              <span className="text-xs text-[#736E64] font-mono">
                 Competency: {item.competencyName} • Timestamp: {item.timestamp}
               </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-[#162338] hover:text-white transition-colors"
+            className="rounded-md p-1.5 text-[#736E64] hover:bg-[#F2EFE9] hover:text-[#191715] transition-colors"
+            aria-label="Close evidence detail modal"
           >
             <XIcon size={18} />
           </button>
@@ -45,76 +45,94 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({ item, onClose })
         <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs">
           {/* Nature & Confidence */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-[#1b2b42] bg-[#09101c] p-3">
-              <span className="text-[10px] font-mono uppercase text-slate-400 block mb-1">
+            <div className="rounded-lg border border-[#DFD9CE] bg-[#FAF8F5] p-3">
+              <span className="text-[10px] font-mono uppercase text-[#736E64] block mb-1">
                 Evidence Nature
               </span>
-              <span className="text-sm font-semibold text-white">
+              <span className="text-sm font-bold text-[#191715]">
                 {item.nature.replace('_', ' ')}
               </span>
             </div>
-            <div className="rounded-xl border border-[#1b2b42] bg-[#09101c] p-3">
-              <span className="text-[10px] font-mono uppercase text-slate-400 block mb-1">
-                Confidence Level
+            <div className="rounded-lg border border-[#DFD9CE] bg-[#FAF8F5] p-3">
+              <span className="text-[10px] font-mono uppercase text-[#736E64] block mb-1">
+                Confidence Classification
               </span>
-              <span className="text-sm font-semibold text-[#00f2fe]">
+              <span className="text-sm font-bold text-[#144A3F]">
                 {item.confidence.replace('_', ' ')}
               </span>
             </div>
           </div>
 
-          {/* Observed vs Interpretation */}
+          {/* Observed Behavior vs Interpretation */}
           <div className="space-y-3">
-            <div className="rounded-xl border border-[#1f3048] bg-[#080e18] p-4">
-              <h4 className="text-xs font-bold text-[#38bdf8] uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                <CheckCircleIcon size={14} /> Directly Observed Telemetry
-              </h4>
-              <p className="text-xs text-slate-200 leading-relaxed font-mono bg-[#05080f] p-3 rounded-lg border border-[#172437]">
+            <div className="rounded-lg border border-[#A3DBC4] bg-[#EDF7F2] p-4 text-[#0E5238]">
+              <div className="flex items-center gap-1.5 font-bold mb-1.5 text-xs">
+                <CheckCircleIcon size={14} />
+                <span>Observed Candidate Action (Hard Telemetry)</span>
+              </div>
+              <p className="leading-relaxed text-xs text-[#191715]">
                 {item.observedBehavior}
               </p>
             </div>
 
-            <div className="rounded-xl border border-[#2b254a] bg-[#0f0c1f] p-4">
-              <h4 className="text-xs font-bold text-[#c084fc] uppercase tracking-wider flex items-center gap-1.5 mb-2">
-                <ShieldIcon size={14} /> Evaluator Synthesis & Competency Invariant
-              </h4>
-              <p className="text-xs text-slate-300 leading-relaxed font-sans">
+            <div className="rounded-lg border border-[#DFD9CE] bg-[#FAF8F5] p-4 text-[#4A463F]">
+              <div className="flex items-center gap-1.5 font-bold mb-1.5 text-xs text-[#191715]">
+                <ShieldIcon size={14} className="text-[#144A3F]" />
+                <span>Evaluator Rubric Interpretation</span>
+              </div>
+              <p className="leading-relaxed text-xs">
                 {item.interpretation}
               </p>
             </div>
           </div>
 
-          {/* Supporting & Counter data */}
-          <div className="rounded-xl border border-[#1b283d] bg-[#090f1a] p-4 space-y-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Corroborating Telemetry Records:
-            </span>
-            <ul className="space-y-1.5">
-              {item.supportingData.map((pt, i) => (
-                <li key={i} className="flex items-start gap-2 text-slate-200">
-                  <span className="text-emerald-400 font-bold shrink-0">✓</span>
-                  <span>{pt}</span>
-                </li>
+          {/* Supporting Evidence Records */}
+          <div>
+            <h4 className="font-bold text-xs text-[#191715] uppercase tracking-wider mb-2 font-mono">
+              Supporting Proof Points ({item.supportingData.length})
+            </h4>
+            <div className="rounded-lg border border-[#DFD9CE] bg-white divide-y divide-[#EAE6DD]">
+              {item.supportingData.map((data, idx) => (
+                <div key={idx} className="flex items-start gap-2.5 p-3 text-xs text-[#4A463F]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#144A3F] mt-1.5 shrink-0" />
+                  <span className="leading-relaxed">{data}</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </div>
 
-          {/* Associated Timeline Events */}
+          {/* Counter Evidence if any */}
+          {item.counterEvidence && item.counterEvidence.length > 0 && (
+            <div>
+              <h4 className="font-bold text-xs text-[#A82424] uppercase tracking-wider mb-2 font-mono">
+                Counter Evidence Disclosures ({item.counterEvidence.length})
+              </h4>
+              <div className="rounded-lg border border-[#F7B5B5] bg-[#FDF1F1] divide-y divide-[#F7B5B5]/40">
+                {item.counterEvidence.map((data, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 p-3 text-xs text-[#871919]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#A82424] mt-1.5 shrink-0" />
+                    <span className="leading-relaxed">{data}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Timeline Link Trace */}
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
-              Associated Session Timeline Events:
-            </span>
+            <h4 className="font-bold text-xs text-[#191715] uppercase tracking-wider mb-2 font-mono">
+              Connected Chronological Events
+            </h4>
             <div className="flex flex-wrap gap-2">
               {item.relatedTimelineEventIds.map((evtId) => (
                 <Link
                   key={evtId}
-                  to={`/timeline?event=${evtId}`}
+                  to={`/verification?event=${evtId}`}
                   onClick={onClose}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#20324d] bg-[#0e1726] px-3 py-1.5 text-xs font-mono text-[#00f2fe] hover:bg-[#15243c]"
+                  className="btn-secondary text-xs"
                 >
-                  <CodeIcon size={12} />
-                  <span>Timeline Event {evtId}</span>
-                  <ExternalLinkIcon size={10} />
+                  <ExternalLinkIcon size={12} className="text-brand" />
+                  <span>View Verification Event {evtId}</span>
                 </Link>
               ))}
             </div>
@@ -122,13 +140,11 @@ export const EvidenceDrawer: React.FC<EvidenceDrawerProps> = ({ item, onClose })
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-[#1a283d] bg-[#070b13] px-6 py-3.5">
-          <span className="text-[11px] text-slate-400 font-mono">
-            Weight Contribution: {item.coverageWeight}% to competency rubric
-          </span>
+        <div className="flex items-center justify-between border-t border-[#DFD9CE] bg-[#FAF8F5] px-6 py-3 text-xs">
+          <span className="font-mono text-[#736E64]">Coverage Weight: {item.coverageWeight}%</span>
           <button
             onClick={onClose}
-            className="rounded-lg bg-teal-500 px-4 py-1.5 text-xs font-bold text-black hover:bg-teal-400"
+            className="btn-primary text-xs"
           >
             Close Inspector
           </button>

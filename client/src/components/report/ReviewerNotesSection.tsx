@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAssessment } from '../../context/AssessmentContext';
-import { CheckIcon, ClockIcon, ShieldIcon } from '../common/Icons';
+import { CheckIcon, ClockIcon } from '../common/Icons';
 import type { ReviewerNotes } from '../../types';
 
 export const ReviewerNotesSection: React.FC = () => {
@@ -28,29 +28,29 @@ export const ReviewerNotesSection: React.FC = () => {
     label: string;
     style: string;
   }[] = [
-    { value: 'STRONG_HIRE', label: 'Strong Hire', style: 'border-emerald-500 bg-emerald-950/60 text-emerald-300' },
-    { value: 'HIRE', label: 'Hire', style: 'border-teal-500 bg-teal-950/60 text-teal-300' },
-    { value: 'LEAN_HIRE', label: 'Lean Hire', style: 'border-blue-500 bg-blue-950/60 text-blue-300' },
-    { value: 'NEEDS_FOLLOW_UP', label: 'Needs Follow-up', style: 'border-amber-500 bg-amber-950/60 text-amber-300' },
-    { value: 'NO_HIRE', label: 'No Hire', style: 'border-rose-500 bg-rose-950/60 text-rose-300' },
+    { value: 'STRONG_HIRE', label: 'Strong Hire', style: 'border-[#A3DBC4] bg-[#EDF7F2] text-[#126646]' },
+    { value: 'HIRE', label: 'Hire', style: 'border-[#9DCFC4] bg-[#EAF4F1] text-[#144A3F]' },
+    { value: 'LEAN_HIRE', label: 'Lean Hire', style: 'border-[#B2DAEB] bg-[#EEF5F9] text-[#1B506B]' },
+    { value: 'NEEDS_FOLLOW_UP', label: 'Needs Follow-up', style: 'border-[#F6CE9F] bg-[#FEF6EC] text-[#A1520C]' },
+    { value: 'NO_HIRE', label: 'No Hire', style: 'border-[#F7B5B5] bg-[#FDF1F1] text-[#A82424]' },
   ];
 
   return (
-    <div className="rounded-xl border border-[#1b283d] bg-[#090f1a] p-5 shadow-lg">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#182338] pb-4">
+    <div className="rounded-xl border border-[#DFD9CE] bg-white p-6 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DFD9CE] pb-4">
         <div>
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <span>Reviewer Evaluation & Hiring Decision</span>
-            <span className="rounded bg-[#122336] px-2 py-0.5 text-[10px] font-mono text-[#00f2fe] border border-[#1d3d59]">
-              Interactive Form
+          <h3 className="font-serif text-base font-bold text-[#191715] flex items-center gap-2">
+            <span>Reviewer Evaluation & Decision Sign-Off</span>
+            <span className="rounded bg-[#EAF4F1] px-2 py-0.5 text-[9px] font-mono font-bold text-[#0F3D34] border border-[#9DCFC4]">
+              LOCAL PERSISTENCE ACTIVE
             </span>
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Decisions are recorded locally in browser state and reflected in the exported report.
+          <p className="text-xs text-[#57524A] mt-0.5">
+            Decisions are recorded locally in browser state and reflected in the exported dossier.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+        <div className="flex items-center gap-1.5 text-xs font-mono text-[#736E64]">
           <ClockIcon size={12} />
           <span>Last Saved: {reviewerNotes.lastSaved}</span>
         </div>
@@ -59,7 +59,7 @@ export const ReviewerNotesSection: React.FC = () => {
       <form onSubmit={handleSave} className="mt-4 space-y-4">
         {/* Recommendation selector */}
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block mb-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-[#191715] block mb-2 font-mono">
             Hiring Recommendation:
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
@@ -70,13 +70,13 @@ export const ReviewerNotesSection: React.FC = () => {
                   type="button"
                   key={opt.value}
                   onClick={() => setRecommendation(opt.value)}
-                  className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 px-2 text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-1.5 rounded-md border py-2 px-2 text-xs font-bold transition-all ${
                     isSelected
-                      ? `${opt.style} shadow-md ring-1 ring-white/20`
-                      : 'border-[#1b273d] bg-[#070c16] text-slate-400 hover:text-white hover:border-slate-600'
+                      ? `${opt.style} shadow-xs ring-1 ring-[#144A3F]/20`
+                      : 'border-[#DFD9CE] bg-[#FAF8F5] text-[#736E64] hover:text-[#191715] hover:border-[#CAC2B3]'
                   }`}
                 >
-                  {isSelected && <CheckIcon size={13} />}
+                  {isSelected && <CheckIcon size={12} />}
                   <span>{opt.label}</span>
                 </button>
               );
@@ -87,69 +87,65 @@ export const ReviewerNotesSection: React.FC = () => {
         {/* Reviewer Details */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block mb-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-[#191715] block mb-1 font-mono">
               Reviewer Name & Title:
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-lg border border-[#1e2e46] bg-[#070c16] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-[#00f2fe] focus:outline-none"
+              className="w-full rounded-md border border-[#DFD9CE] bg-[#FAF8F5] px-3 py-2 text-xs text-[#191715] placeholder-[#736E64] focus:border-[#144A3F] focus:bg-white focus:outline-none"
               placeholder="e.g. Sarah Connor, VP of Engineering"
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block mb-1">
-              Evaluation Status:
+            <label className="text-xs font-bold uppercase tracking-wider text-[#191715] block mb-1 font-mono">
+              Report Status:
             </label>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as ReviewerNotes['status'])}
-              className="w-full rounded-lg border border-[#1e2e46] bg-[#070c16] px-3 py-2 text-xs text-white focus:border-[#00f2fe] focus:outline-none"
+              className="w-full rounded-md border border-[#DFD9CE] bg-[#FAF8F5] px-3 py-2 text-xs text-[#191715] focus:border-[#144A3F] focus:bg-white focus:outline-none"
             >
-              <option value="DRAFT">DRAFT — Pending Calibration</option>
-              <option value="IN_REVIEW">IN_REVIEW — Committee Evaluating</option>
-              <option value="APPROVED">APPROVED — Formal Verdict Recorded</option>
-              <option value="ARCHIVED">ARCHIVED — Session Concluded</option>
+              <option value="DRAFT">DRAFT (Review in Progress)</option>
+              <option value="IN_REVIEW">IN_REVIEW (Hiring Committee Active)</option>
+              <option value="APPROVED">APPROVED (Verified Evaluation)</option>
+              <option value="ARCHIVED">ARCHIVED (Historical Record)</option>
             </select>
           </div>
         </div>
 
         {/* Reviewer Notes Textarea */}
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block mb-1">
-            Qualitative Assessment Notes:
+          <label className="text-xs font-bold uppercase tracking-wider text-[#191715] block mb-1 font-mono">
+            Hiring Committee Synthesis & Qualitative Observations:
           </label>
           <textarea
-            rows={4}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full rounded-lg border border-[#1e2e46] bg-[#070c16] p-3 text-xs text-white leading-relaxed placeholder-slate-500 focus:border-[#00f2fe] focus:outline-none"
-            placeholder="Record specific rationale, reference Evidence IDs, and provide recommendations for hiring manager calibration..."
+            rows={4}
+            className="w-full rounded-md border border-[#DFD9CE] bg-[#FAF8F5] p-3 text-xs text-[#191715] placeholder-[#736E64] focus:border-[#144A3F] focus:bg-white focus:outline-none leading-relaxed"
+            placeholder="Record specific rationale linking candidate telemetry to your decision..."
           />
         </div>
 
-        {/* Form Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <ShieldIcon size={12} className="text-[#00f2fe]" />
-            <span>Changes persist to browser localStorage</span>
-          </div>
+        {/* Save Bar */}
+        <div className="flex items-center justify-between pt-2">
+          {savedNotification ? (
+            <span className="flex items-center gap-1.5 text-xs text-[#126646] font-bold">
+              <CheckIcon size={13} /> Saved to local session state
+            </span>
+          ) : (
+            <span className="text-[11px] text-[#736E64]">Changes update the printable dossier immediately.</span>
+          )}
 
-          <div className="flex items-center gap-2">
-            {savedNotification && (
-              <span className="flex items-center gap-1 text-xs font-medium text-emerald-400 animate-fade-in">
-                <CheckIcon size={13} /> Saved successfully!
-              </span>
-            )}
-            <button
-              type="submit"
-              className="rounded-lg bg-gradient-to-r from-[#00f2fe] to-[#10b981] px-4 py-2 text-xs font-bold text-black shadow-md hover:opacity-95 transition-all"
-            >
-              Save Reviewer Decision
-            </button>
-          </div>
+          <button
+            type="submit"
+            className="btn-primary text-xs"
+          >
+            Save Reviewer Decision
+          </button>
         </div>
       </form>
     </div>
