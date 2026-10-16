@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AssessmentProvider } from './context/AssessmentContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -14,12 +14,14 @@ import { FeedbackPage } from './pages/FeedbackPage';
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const isLandingPage = location.pathname === '/';
-  const isWorkspace = location.pathname.startsWith('/workspace') || location.pathname.startsWith('/assessment');
+  const isWorkspace =
+    location.pathname.startsWith('/workspace') ||
+    location.pathname.startsWith('/assessment');
 
   return (
     <div className="flex min-h-screen flex-col bg-base text-primary font-sans transition-colors duration-150">
       <Navbar />
-      <main className="flex-1 flex flex-col min-h-0">
+      <main className={`flex-1 flex flex-col ${isWorkspace ? 'min-h-0 min-w-0 overflow-hidden' : ''}`}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/workspace" element={<AssessmentWorkspacePage />} />
@@ -32,7 +34,6 @@ const AppLayout: React.FC = () => {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      {/* Hide footer on full-height workspace; show minimal footer on other pages */}
       {!isWorkspace && !isLandingPage && <Footer />}
     </div>
   );
