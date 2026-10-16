@@ -28,7 +28,7 @@ export const AssessmentWorkspacePage = () => {
   }, [activity, session.sessionId, startAssessment]);
 
   return (
-    <div className="flex flex-col flex-1 h-[calc(100vh-4rem)] bg-[#070a10] text-slate-100 overflow-hidden">
+    <div className="workspace-container bg-[#070a10] text-slate-100 min-h-0">
       {/* Workspace Top Toolbar */}
       <div className="flex flex-wrap items-center justify-between border-b border-[#182338] bg-[#080d16] px-4 py-2 gap-3 shrink-0">
         <div className="flex items-center gap-3">
@@ -131,19 +131,19 @@ export const AssessmentWorkspacePage = () => {
       </div>
 
       {/* Desktop Multi-Panel Layout */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
-        {/* Left Panel: Task Spec (approx 26%) */}
-        <div className="w-[28%] min-w-[280px] max-w-[360px] h-full overflow-hidden">
+      <div className="hidden md:grid workspace-grid">
+        {/* Left Panel: Task Spec (approx 28%) */}
+        <div className="min-w-0 h-full overflow-hidden">
           <TaskPanel />
         </div>
 
         {/* Center Panel: Code Editor (approx 44%) */}
-        <div className="flex-1 h-full overflow-hidden">
+        <div className="min-w-0 h-full overflow-hidden flex flex-col">
           <CodeEditorPanel />
         </div>
 
-        {/* Right Panel: Split between Tests & AI Copilot (approx 30%) */}
-        <div className="w-[34%] min-w-[340px] max-w-[440px] h-full flex flex-col border-l border-[#1a2539] bg-[#080d16] overflow-hidden">
+        {/* Right Panel: Split between Tests & AI Copilot (approx 28%) */}
+        <div className="min-w-0 h-full flex flex-col border-l border-[#1a2539] bg-[#080d16] overflow-hidden">
           {/* Right Panel Tabs */}
           <div className="flex h-10 border-b border-[#182338] bg-[#070b13] px-2 text-xs font-semibold shrink-0">
             <button
@@ -170,7 +170,7 @@ export const AssessmentWorkspacePage = () => {
             </button>
           </div>
 
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden min-h-0 min-w-0">
             {rightPanelTab === 'tests' ? <TestRunnerPanel /> : <AIAssistantPanel />}
           </div>
         </div>

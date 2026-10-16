@@ -125,8 +125,16 @@ export function AssessmentProvider({ children }: { children: ReactNode }) {
     catch (reason) { const message = reason instanceof Error ? reason.message : 'Could not start assessment.'; setError(message); setActivity('error'); throw new ApiError(message); }
   }, [activity, applySession, serverSession, session.sessionId]);
 
-  const updateCode = (id: string, content: string) => { if (serverSession?.status !== 'SUBMITTED') setCodeFiles((files) => files.map((file) => file.id === id ? { ...file, content, isModified: true } : file)); };
-  const resetCode = () => { if (task) setCodeFiles([{ id: 'main', name: 'solution.js', language: task.language, content: task.starterCode, isModified: false }]); };
+  const updateCode = useCallback((id: string, content: string) => {
+    if (serverSession?.status !== 'SUBMITTED') {
+      setCodeFiles((files) => files.map((file) => file.id === id ? { ...file, content, isModified: true } : file));
+    }
+  }, [serverSession?.status]);
+  const resetCode = useCallback(() => {
+    if (task) {
+      setCodeFiles([{ id: 'main', name: 'solution.js', language: task.language, content: task.starterCode, isModified: false }]);
+    }
+  }, [task]);
   const runAllTests = async () => {
     if (!serverSession || activity === 'running' || activity === 'submitting' || activity === 'submitted') return;
     const code = codeFiles[0]?.content ?? '';

@@ -17,7 +17,7 @@ const AppLayout: React.FC = () => {
   return (
     <div className="flex min-h-screen flex-col bg-[#070a10] text-slate-100 font-sans selection:bg-[#00f2fe]/30 selection:text-white">
       <Navbar />
-      <main className="flex-1 flex flex-col">
+      <main className={`flex-1 flex flex-col ${isWorkspace ? 'min-h-0 min-w-0 overflow-hidden' : ''}`}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/assessment" element={<AssessmentWorkspacePage />} />
