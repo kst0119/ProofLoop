@@ -463,7 +463,7 @@ describe("submitAssessment service", () => {
       sessionId: sid, code: BAD_CODE, fetchFn: mockFetch as never, db: db as never,
     });
     const sysEvents = db._events.filter(
-      (e: MockEvent) => e.sessionId === sid && e.source === "system_generated",
+      (e: MockEvent) => e.sessionId === sid && e.source === "SYSTEM_GENERATED",
     );
     assert.ok(sysEvents.length >= 2);
   });

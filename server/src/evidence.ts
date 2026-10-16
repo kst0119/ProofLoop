@@ -160,18 +160,20 @@ export function parseClientTimestamp(value: string | null | undefined): Date | n
   return new Date(ms);
 }
 
-// Helper to map actor string to its DB-mapped lowercase value
-function mapActor(actor: string): string {
+// Map application actor labels to generated Prisma enum members.
+// Prisma handles @map(...) when storing values in PostgreSQL.
+function mapActor(actor: string): EvidenceActor {
   switch (actor) {
     case "candidate":
-      return "candidate";
+      return EvidenceActor.CANDIDATE;
     case "ai_assistant":
-      return "ai_assistant";
+      return EvidenceActor.AI_ASSISTANT;
     case "test_runner":
-      return "test_runner";
+      return EvidenceActor.TEST_RUNNER;
     case "system":
+      return EvidenceActor.SYSTEM;
     default:
-      return "system";
+      throw new EvidenceValidationError("Invalid evidence actor");
   }
 }
 
@@ -295,13 +297,13 @@ export async function appendEvent(
         sessionId: input.sessionId,
         sequence: nextSequence,
         eventType: input.eventType,
-        actor: mapActor(input.actor) as never,
+        actor: mapActor(input.actor),
         clientTimestamp: clientTs,
         taskVersion: session.taskVersion,
         rubricVersion: session.rubricVersion,
         challengeVersion: session.challengeVersion,
         payload: input.payload as never,
-        source: "candidate_submitted" as never,
+        source: EvidenceSource.CANDIDATE_SUBMITTED,
         supersedes: input.supersedes ?? null,
       },
     });
@@ -367,13 +369,13 @@ export async function appendSystemEvent(
         sessionId: input.sessionId,
         sequence: nextSequence,
         eventType: input.eventType,
-        actor: mapActor(input.actor) as never,
+        actor: mapActor(input.actor),
         clientTimestamp: null,
         taskVersion: session.taskVersion,
         rubricVersion: session.rubricVersion,
         challengeVersion: session.challengeVersion,
         payload: input.payload as never,
-        source: "system_generated" as never,
+        source: EvidenceSource.SYSTEM_GENERATED,
         supersedes: null,
       },
     });
